@@ -3,7 +3,7 @@
 > [!IMPORTANT]
 > This project is in its infancy, and \***\*WILL NOT WORK\*\*** in its current state. Any issues created will be marked as wontfix and you will be sad and I will laugh.
 
-A Space game inspired by games like Neptune's Pride. Created with next.js (zustand, tailwind, konva, framer-motion) on the frontend, python (asyncio, motor, beanie, sanic) on the backend, assuming MongoDB as a database.
+A super duper original (totally revolutionary) space game inspired by games like Neptune's Pride. Created with next.js (zustand, tailwind, konva, framer-motion) on the frontend, python (asyncio, motor, beanie, sanic) on the backend, assuming MongoDB as a database.
 
 ## Getting Started
 
