@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-size: 14px;
+}
+
+body {
+  background: rgb(15, 15, 15);
+  @apply text-white;
+}
+
+.primary-panel {
+  @apply bg-white/[3%] ring-[1px] ring-white/[6%] ring-inset;
+}
+
+.primary-panel-solid {
+  @apply bg-[#151515] ring-[1px] ring-white/[6%] ring-inset;
+}
+
+.primary-panel-interactive {
+  @apply primary-panel hover:bg-white/[5%] active:bg-white/[7%];
+}
+
+.primary-panel-solid-interactive {
+  @apply primary-panel-solid hover:bg-[#1b1b1b] active:bg-[#202020];
+}
+
+.vibrant-panel {
+  @apply bg-indigo-800 ring-[1px] ring-white/10 ring-inset;
+}
+
+.vibrant-panel-interactive {
+  @apply vibrant-panel hover:bg-indigo-600 active:bg-indigo-700;
+}
+
+.secondary-panel {
+  @apply bg-white/[4%];
+}
+
+.secondary-panel-interactive {
+  @apply secondary-panel hover:bg-white/[5%] active:bg-white/[7%];
+}
+
+.transparent-panel {
+  @apply bg-transparent;
+}
+
+.transparent-panel-interactive {
+  @apply transparent-panel hover:bg-white/[5%] active:bg-white/[7%];
+}
+
+.danger-panel {
+  @apply bg-red-500/[15%] ring-[1px] ring-red-500/[10%] ring-inset;
+}
+
+.danger-panel-interactive {
+  @apply danger-panel hover:bg-red-500/[30%] active:bg-red-500/[20%];
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  @apply dark:bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-zinc-300 dark:bg-zinc-700;
+}
+
+.cl-card {
+  box-shadow: none;
+  /* @apply primary-panel; */
+}
+
+.cl-navbar {
+  @apply hidden;
+}
+
+.cl-profileSectionPrimaryButton {
+  @apply text-blue-400 primary-panel-interactive;
+}
+
+.cl-avatarImageActionsUpload {
+  @apply text-blue-400;
+}
+
+.cl-formButtonReset {
+  @apply text-blue-400;
+}

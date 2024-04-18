@@ -2,9 +2,12 @@
 
 A Space game inspired by games like Neptune's Pride. Created with next.js (zustand, tailwind, konva, framer-motion) on the frontend, python (asyncio, motor, beanie, sanic) on the backend, assuming MongoDB as a database.
 
+> [!IMPORTANT]
+> This project is in its infancy, and as such it **WILL NOT WORK!** DO NOT CRY IN MY DMs OR CREATE ISSUES. YOU WILL BE IGNORED.
+
 ## Getting Started
 
-Clone the repo, navigate to the project directory. The structure is a monorepo with `frontend` and `backend` packages.
+If you'd like to contruibute, tweak, or run your own local instance of Project S for whatever reason. The structure is a monorepo with `frontend` and `backend` packages. Database not included.
 
 ### Running the backend
 

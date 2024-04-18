@@ -1,0 +1,9 @@
+asyncio
+aiohttp
+sanic[ext]
+motor
+pymongo
+python-dotenv
+dnspython
+bcrypt
+beanie
