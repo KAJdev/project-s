@@ -63,7 +63,7 @@ Cool! Now let's get the frontend running so we can start a game!
 ### Running the frontend
 
 > [!NOTE]
-> Requires nodejs and npm
+> Requires nodejs and npm or yarn or [insert trendy package manager]
 
 Navigate to the `frontend` directory
 
