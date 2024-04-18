@@ -1,0 +1,26 @@
+{
+  "artificialDelayMilliseconds": 700,
+  "keepExistingTerminalsOpen": false,
+  "runOnStartup": true,
+  "terminals": [
+    {
+      "splitTerminals": [
+        {
+          "name": "backend",
+          "commands": [
+            "cd ./packages/backend",
+            "venv\\Scripts\\activate",
+            "py main.py"
+          ]
+        },
+        {
+          "name": "frontend",
+          "commands": [
+            "cd ./packages/frontend",
+            "npm run dev"
+          ]
+        }
+      ]
+    }
+  ]
+}

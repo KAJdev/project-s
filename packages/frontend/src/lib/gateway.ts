@@ -1,6 +1,6 @@
 import { Channel, channelStore } from "./channels";
 import { Message, messageStore } from "./messages";
-import { useToken } from "./token";
+import { tokenStore, useToken } from "./token";
 import { User, userStore } from "./users";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 
@@ -113,9 +113,15 @@ export function useGateway() {
   useEffect(() => {
     if (lastMessage !== null) {
       let data: GatewayMessage;
+
       try {
         data = JSON.parse(lastMessage.data) as GatewayMessage;
       } catch (e) {
+        if (lastMessage.data.toLowerCase() === "unauthorized") {
+          prettyPrint("Unauthorized");
+          tokenStore.getState().setToken(null);
+          return;
+        }
         prettyPrint("Failed to parse message:", lastMessage.data);
         return;
       }

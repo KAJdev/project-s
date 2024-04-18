@@ -1,14 +1,37 @@
-from datetime import datetime
-import json
-import os
-import base64
+og_print = print
+import inspect
+from os import getenv
 from uuid import uuid4
+from sanic import Request
+import base64
+from datetime import datetime
+import os
+import json
+from modules.gateway import GatewayOpCode
 
-from models import GatewayOpCode
 
-
-def generate_id() -> str:
+def generate_id():
     return str(uuid4())
+
+
+def print(*args, important=False, **kwargs):
+    stack = inspect.stack()
+    caller_frame = stack[1]
+    frame_info = inspect.getframeinfo(caller_frame[0])
+    mod = frame_info.filename.split(".")[0].split("/")[-1].split("\\")[-1]
+    og_print(
+        f"--->" if important else "    ",
+        f"[{mod}]",
+        *args,
+        **kwargs,
+    )
+
+
+def internal_auth(request: Request) -> bool:
+    if not (internal_token := request.headers.get("Authorization")):
+        return False
+
+    return internal_token == getenv("INTERNAL_TOKEN")
 
 
 def generate_token(id_: str) -> str:

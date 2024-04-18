@@ -1,7 +1,24 @@
 from sanic import Websocket
-import utils
-from models import GatewayOpCode
+from modules import utils
 import asyncio
+from enum import Enum
+
+
+class GatewayOpCode(Enum):
+    INVALID = 0
+    READY = 1
+    PING = 2
+    PONG = 3
+    MESSAGE_CREATE = 4
+    MESSAGE_UPDATE = 5
+    MESSAGE_DELETE = 6
+    CHANNEL_CREATE = 7
+    CHANNEL_UPDATE = 8
+    CHANNEL_DELETE = 9
+    USER_JOIN = 10
+    USER_LEAVE = 11
+    USER_UPDATE = 12
+    REQUEST_CHANNELS = 13
 
 
 GATEWAY_CONNECTIONS: dict[str, Websocket] = {}
