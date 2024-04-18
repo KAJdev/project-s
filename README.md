@@ -1,6 +1,6 @@
 # Project S
 
-A Space game inspired by games like Neptune's Pride. Created with next.js (zustand, tailwind, konva, frame-motion) on the frontend, python (asyncio, motor, beanie, sanic) on the backend, assuming MongoDB as a database.
+A Space game inspired by games like Neptune's Pride. Created with next.js (zustand, tailwind, konva, framer-motion) on the frontend, python (asyncio, motor, beanie, sanic) on the backend, assuming MongoDB as a database.
 
 ## Getting Started
 
@@ -18,6 +18,9 @@ cd ./packages/backend
 ```
 
 Create `.env` with the following template
+
+> [!IMPORTANT]
+> You need a DB set up for this. Google is your friend and I am a lazy writer.
 
 ```env
 MONGO_URL={database uri}
