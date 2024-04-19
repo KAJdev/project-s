@@ -51,7 +51,7 @@ async def feed(request: Request, ws: gateway.Websocket):
     gateway.add_websocket_connection(user.id, ws)
 
     try:
-
+        await ws.send(wh_msg(GatewayOpCode.READY))
         while True:
             op, data = from_wh(await ws.recv())
             if op == GatewayOpCode.PING:
