@@ -58,7 +58,7 @@ export function User({ id }: { id: ID }) {
           <img
             src={user.banner_url}
             alt="Banner"
-            className="w-full h-32 object-cover rounded-t border border-white/5"
+            className="w-full h-32 object-cover border border-white/5"
           />
         )}
         <Body

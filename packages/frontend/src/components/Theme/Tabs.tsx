@@ -18,7 +18,7 @@ export function Tabs({
   return (
     <div
       className={classes(
-        "flex duration-100 rounded text-sm items-center select-none cursor-default bg-white/5",
+        "flex duration-100 text-sm items-center select-none cursor-default bg-white/5",
         hasTextOptions ? "p-1.5 gap-2" : "gap-0",
         className
       )}
@@ -27,7 +27,7 @@ export function Tabs({
         <div
           key={option.value}
           className={classes(
-            "flex items-center justify-center rounded duration-100 px-2 py-[0.4rem]",
+            "flex items-center justify-center duration-100 px-2 py-[0.4rem]",
             value === option.value
               ? "primary-panel-solid"
               : "opacity-40 hover:opacity-100"

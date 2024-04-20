@@ -45,7 +45,7 @@ export function Tooltip({
             duration: 0.1,
           }}
           className={classes(
-            "primary-panel-solid-interactive active rounded text-sm",
+            "primary-panel-solid-interactive active text-sm",
             typeof content === "string" ? "px-2 py-1" : "px-2 py-2",
             inter.className,
             className

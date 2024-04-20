@@ -7,12 +7,19 @@ import { ChannelLayout } from "./ChannelLayout";
 import { useToken } from "@/lib/token";
 import { useRouter } from "next/router";
 import { useFetchUser } from "@/lib/users";
+import { GalaxyLayout } from "./GalaxyLayout";
+import { GameLayout } from "./GameLayout";
+import { Sparkle } from "lucide-react";
+import { Galaxy } from "@/components/Icons/Galaxy";
+import { NewGameLayout } from "./NewGameLayout";
+import { StarBackground } from "@/components/Theme/StarBackground";
 
 function AppElement() {
   const isReady = useGateway();
   useFetchUser();
   return (
     <PageComponent>
+      <StarBackground centerAdapt />
       <Outlet />
       <div
         className={classes(
@@ -22,7 +29,10 @@ function AppElement() {
             : "opacity-100 pointer-events-auto"
         )}
       >
-        Loading...
+        <Galaxy
+          className="animate-spin w-16 h-16 text-white -scale-100"
+          fill="white"
+        />
       </div>
     </PageComponent>
   );
@@ -39,29 +49,15 @@ export function AppLayout() {
       children: [
         {
           index: true,
-          element: (
-            <>
-              <SidebarLayout />
-              <Outlet />
-            </>
-          ),
+          element: <GalaxyLayout />,
         },
         {
-          path: "channels/:channelId",
-          element: (
-            <>
-              <SidebarLayout />
-              <ChannelLayout />
-            </>
-          ),
+          path: "games/:gameId",
+          element: <GameLayout />,
         },
         {
-          path: "preferences",
-          element: <h1>Preferences</h1>,
-        },
-        {
-          path: "account",
-          element: <Account />,
+          path: "new",
+          element: <NewGameLayout />,
         },
       ],
     },

@@ -38,7 +38,7 @@ export function Button({
   const content = (
     <button
       className={classes(
-        "flex gap-2 duration-100 rounded px-2 py-[0.4rem] text-sm items-center select-none cursor-default",
+        "flex gap-2 duration-100 px-2 py-[0.4rem] text-sm items-center select-none cursor-default",
         variant === "primary" && "primary-panel-interactive",
         variant === "secondary" && "secondary-panel-interactive",
         variant === "transparent" && "transparent-panel-interactive",

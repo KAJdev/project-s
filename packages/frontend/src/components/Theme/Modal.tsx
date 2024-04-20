@@ -110,7 +110,7 @@ export function Panel({ className, children }: StyleableWithChildren) {
   return (
     <div
       className={classes(
-        "flex flex-col rounded-md primary-panel-solid",
+        "flex flex-col primary-panel-solid",
         "bg-opacity-70 backdrop-blur-3xl",
         inter.className,
         className
@@ -139,7 +139,7 @@ export function TopBar({
   return (
     <div
       className={classes(
-        "flex flex-row items-center justify-between rounded-t-md py-3 px-5",
+        "flex flex-row items-center justify-between py-3 px-5",
         border && "border-white/[6%] border-b",
         className
       )}

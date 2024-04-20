@@ -94,10 +94,10 @@ class Position(BaseModel):
 class Game(Document):
     id: str = Field(default_factory=generate_id)
     name: str
-    members: list[str]
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     owner: str
-    started: bool = Field(default=False)  # game started
+    members: list[str] = Field(default_factory=list)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    started_at: Optional[datetime] = Field(default=None)
     winner: Optional[str] = Field(
         default=None
     )  # winner of the game, None if not finished
@@ -105,11 +105,21 @@ class Game(Document):
     settings: GameSettings
 
     def dict(self):
-        d = super().model_dump()
+        d = super().model_dump(exclude={"password"})
         return convert_dates_to_iso(d)
 
     class Settings:
         name = "games"
+
+
+class Research(BaseModel):
+    scanning: int = Field(default=1)
+    hyperspace: int = Field(default=1)
+    terraforming: int = Field(default=1)
+    experimentation: int = Field(default=1)
+    weapons: int = Field(default=1)
+    banking: int = Field(default=1)
+    manufacturing: int = Field(default=1)
 
 
 class Player(Document):
@@ -119,13 +129,7 @@ class Player(Document):
 
     # research progress
     research_queue: list[str] = Field(default_factory=list)
-    scanning: int = Field(default=1)
-    hyperspace: int = Field(default=1)
-    terraforming: int = Field(default=1)
-    experimentation: int = Field(default=1)
-    weapons: int = Field(default=1)
-    banking: int = Field(default=1)
-    manufacturing: int = Field(default=1)
+    research: Research = Field(default_factory=Research)
 
     def dict(self):
         d = super().model_dump()
@@ -155,8 +159,12 @@ class Star(Document):
     id: str = Field(default_factory=generate_id)
     game: str
     position: Position
+    name: str
     occupier: Optional[str] = Field(default=None)
     ships: int = Field(default=0)
+    ship_accum: float = Field(
+        default=0
+    )  # ship accumulation, once it reaches 1, a ship is added
     economy: int = Field(default=0)
     industry: int = Field(default=0)
     science: int = Field(default=0)
@@ -193,6 +201,7 @@ class Carrier(Document):
     id: str = Field(default_factory=generate_id)
     game: str
     owner: str
+    name: str
     position: Position
     destination_queue: list[str] = Field(default_factory=list)  # list of star ids
     ships: int = Field(default=0)
@@ -209,6 +218,7 @@ async def init():
     global client
     client = AsyncIOMotorClient(getenv("MONGO_URL"))
     await init_beanie(
-        database=client[getenv("ENV")], document_models=[User, Game, Player, Message]
+        database=client[getenv("ENV")],
+        document_models=[User, Game, Player, Message, Star, Carrier],
     )
     print("Connected to MongoDB", important=True)

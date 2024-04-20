@@ -48,7 +48,7 @@ export function ChatBar({ channelId }: { channelId: ID }) {
   return (
     <div className="w-full px-8 pb-8">
       <div
-        className="w-full rounded bg-white/[3%] p-4 flex cursor-text"
+        className="w-full bg-white/[3%] p-4 flex cursor-text"
         onClick={() => textAreaRef.current?.focus()}
       >
         <TextareaAutosize

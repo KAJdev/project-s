@@ -41,14 +41,14 @@ export function Select({
       content={
         <div
           className={classes(
-            "primary-panel-solid-interactive active p-1 gap-0.5 rounded w-[12rem] flex flex-col overflow-y-auto max-h-[30rem] min-h-0 drop-shadow-xl",
+            "primary-panel-solid-interactive active p-1 gap-0.5 w-[12rem] flex flex-col overflow-y-auto max-h-[30rem] min-h-0 drop-shadow-xl",
             inter.className
           )}
         >
           {options.map((option) => (
             <div
               className={classes(
-                "transparent-panel-interactive flex items-center gap-2 px-1.5 py-1 rounded-sm",
+                "transparent-panel-interactive flex items-center gap-2 px-1.5 py-1",
                 option.value === value && "active"
               )}
               key={option.value}
@@ -68,7 +68,7 @@ export function Select({
     >
       <div
         className={classes(
-          "flex gap-2 duration-100 rounded px-2 py-[0.4rem] text-sm items-center select-none cursor-default w-[12rem]",
+          "flex gap-2 duration-100 px-2 py-[0.4rem] text-sm items-center select-none cursor-default w-[12rem]",
           variant === "primary" && "primary-panel-interactive",
           variant === "secondary" && "secondary-panel-interactive",
           variant === "transparent" && "transparent-panel-interactive",

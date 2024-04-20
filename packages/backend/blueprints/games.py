@@ -1,7 +1,7 @@
 from datetime import datetime, UTC
 from sanic import Blueprint, Request, json, exceptions
 from sanic_ext import openapi
-from modules.db import Message, Player, Game, User
+from modules.db import GameSettings, Message, Player, Game, User
 from modules.auth import authorized
 from modules import gateway
 from beanie.operators import Or, And, In
@@ -16,7 +16,9 @@ bp = Blueprint("games")
 @openapi.operation("Get your games")
 @openapi.description("Get your games")
 async def get_messages(request: Request):
-    game = await Game.find(Game.players == request.ctx.user.id).to_list(None)
+    game = await Game.find(
+        Or(Game.members == request.ctx.user.id, Game.owner == request.ctx.user.id)
+    ).to_list(None)
     return json([g.dict() for g in game])
 
 
@@ -29,16 +31,25 @@ async def create_game(request: Request):
     if not data:
         raise exceptions.BadRequest("Bad Request")
 
-    if not all(data.get(k) for k in ("players", "name")):
-        raise exceptions.BadRequest("Bad Request")
+    name = data.get("name")
+    settings = data.get("settings")
 
-    players = data["players"]
-    players.append(request.ctx.user.id)
+    if not name:
+        raise exceptions.BadRequest("Name is required")
+
+    if not settings:
+        raise exceptions.BadRequest("Settings are required")
+
+    try:
+        settings = GameSettings.model_construct(**settings)
+    except Exception as e:
+        raise exceptions.BadRequest(f"Invalid settings: {e}")
 
     game = Game(
         name=data["name"],
-        players=players,
         created_at=datetime.now(UTC),
+        owner=request.ctx.user.id,
+        settings=settings,
     )
 
     await game.save()

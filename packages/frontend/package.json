@@ -20,6 +20,7 @@
     "@types/react-file-icon": "^1.0.4",
     "@types/react-virtualized": "^9.21.27",
     "autoprefixer": "10.4.16",
+    "d3-force": "^3.0.0",
     "eslint": "8.49.0",
     "eslint-config-next": "13.5.2",
     "framer-motion": "^10.18.0",
@@ -42,5 +43,8 @@
     "typescript": "5.2.2",
     "veaury": "^2.3.12",
     "zustand": "^4.4.6"
+  },
+  "devDependencies": {
+    "@types/d3-force": "^3.0.9"
   }
 }

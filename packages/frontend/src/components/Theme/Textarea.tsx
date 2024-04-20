@@ -28,7 +28,7 @@ export function Textarea({
       {label && <Label>{label}</Label>}
       <div
         className={classes(
-          "flex duration-100 rounded text-sm items-center select-none primary-panel-interactive",
+          "flex duration-100 text-sm items-center select-none primary-panel-interactive",
           "border-transparent",
           focused && "active",
           Boolean(disabled) ? "opacity-50 pointer-events-none" : "",

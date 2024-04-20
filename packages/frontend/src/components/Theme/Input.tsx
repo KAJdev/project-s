@@ -8,12 +8,13 @@ export function Input({
   placeholder,
   value,
   className,
-  onChange,
+  onChange: onChangeProp,
   onClear,
   autoFocus,
   disabled = false,
   clearable,
   loading,
+  type = "text",
   ...props
 }: Styleable &
   Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> & {
@@ -30,6 +31,15 @@ export function Input({
     loading?: boolean;
   }) {
   const [focused, setFocused] = useState(false);
+
+  const min = props.min ? +props.min : 0;
+  const max = props.max ? +props.max : Infinity;
+
+  const onChange = (value: string) => {
+    if (disabled) return;
+    if (type === "number" && isNaN(+value)) return;
+    onChangeProp(value);
+  };
 
   const startingIcon = clearable
     ? icon && <div className="ml-2">{icon}</div>
@@ -52,11 +62,11 @@ export function Input({
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1 w-full">
       {label && <Label>{label}</Label>}
       <div
         className={classes(
-          "flex duration-100 rounded text-sm items-center select-none primary-panel-interactive",
+          "flex duration-100 text-sm items-center select-none primary-panel-interactive w-full",
           "border-transparent",
           focused && "active",
           Boolean(disabled) ? "opacity-50 pointer-events-none" : "",
@@ -65,14 +75,20 @@ export function Input({
       >
         {startingIcon}
         <input
-          type="text"
+          type={type}
           {...props}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           className="px-2 py-[0.4rem] bg-transparent focus:outline-none w-full"
           onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          onBlur={() => {
+            setFocused(false);
+
+            if (type === "number" && (isNaN(+value) || +value < min))
+              onChange(min.toString());
+            if (type === "number" && +value > max) onChange(max.toString());
+          }}
           autoFocus={autoFocus}
         />
         {endIcon}

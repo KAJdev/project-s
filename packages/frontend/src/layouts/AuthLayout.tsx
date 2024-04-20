@@ -57,7 +57,7 @@ export function AuthLayout({ mode = "login" }: { mode?: "login" | "signup" }) {
         inter.className
       )}
     >
-      <div className="max-w-[35rem] w-full rounded-md primary-panel-solid p-2">
+      <div className="max-w-[35rem] w-full primary-panel-solid p-2">
         <TopBar border={false}>
           <Title>
             {mode === "login" ? "Welcome Back" : "Create an Account"}
