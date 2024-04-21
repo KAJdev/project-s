@@ -1,44 +1,35 @@
 import { Game, useGames } from "@/lib/games";
-import { motion } from "framer-motion";
-import { Galaxy } from "@/components/Icons/Galaxy";
-import { Satellite } from "lucide-react";
+import { Crown, ExternalLink, Satellite } from "lucide-react";
 import { Button } from "@/components/Theme/Button";
-import { StarBackground } from "@/components/Theme/StarBackground";
 import { Link } from "react-router-dom";
-
-type GalaxyNode = { id: ID; x: number; y: number; fx?: number; fy?: number };
-
-const COLORS = ["#2056bc", "#bba7be", "#c0aa13", "#c25b00", "#ffa34c"];
-
-function GameGalaxy({ gameId }: { gameId: ID }) {
-  const [color] = useState(Math.floor(Math.random() * COLORS.length));
-  const [hovering, setHovering] = useState(false);
-  return (
-    <div
-      className="flex flex-row gap-2 items-center"
-      style={{ transform: "translate(-50%, -50%)" }}
-      onMouseEnter={() => setHovering(true)}
-      onMouseLeave={() => setHovering(false)}
-    >
-      <Galaxy
-        className="w-20 h-20 text-white hover:w-24 hover:h-24 duration-200 ease-in-out cursor-pointer"
-        fill={COLORS[color]}
-      />
-      <motion.div
-        className="primary-panel-solid p-2 flex flex-col gap-1"
-        animate={{
-          opacity: hovering ? 1 : 0,
-          scale: hovering ? 1 : 0,
-        }}
-      >
-        <h1>{gameId}</h1>
-      </motion.div>
-    </div>
-  );
-}
+import { useSelf } from "@/lib/users";
+import { Tooltip } from "@/components/Theme/Tooltip";
 
 function GameItem({ game }: { game: Game }) {
-  return <div className="flex flex-row gap-2 items-center">{game.name}</div>;
+  const user = useSelf();
+
+  return (
+    <div className="flex flex-row gap-2 items-center justify-between">
+      <div className="flex flex-col">
+        <div className="flex gap-2 items-center">
+          {user?.id === game.owner && (
+            <Tooltip content="You started this game">
+              <Crown className="text-yellow-400" size={14} />
+            </Tooltip>
+          )}
+          <p>{game.name}</p>
+        </div>
+        <p className="text-sm text-gray-400">{game.members.length} players</p>
+      </div>
+      <Link to={`/app/games/${game.id}`}>
+        <Button variant="outline" icon={<ExternalLink size={14} />}>
+          {game.started_at || game.members.find((m) => m.user === user?.id)
+            ? "View"
+            : "Join"}
+        </Button>
+      </Link>
+    </div>
+  );
 }
 
 export function GalaxyLayout() {

@@ -1,4 +1,4 @@
-import { Outlet, useRoutes } from "react-router-dom";
+import { Outlet, useLocation, useParams, useRoutes } from "react-router-dom";
 import { Page as PageComponent } from "@/components/Theme/Page";
 import { SidebarLayout } from "@/layouts/SidebarLayout";
 import { Account } from "./Account";
@@ -16,10 +16,11 @@ import { StarBackground } from "@/components/Theme/StarBackground";
 
 function AppElement() {
   const isReady = useGateway();
+  const { gameId } = useParams();
   useFetchUser();
   return (
     <PageComponent>
-      <StarBackground centerAdapt />
+      {!gameId && <StarBackground centerAdapt />}
       <Outlet />
       <div
         className={classes(

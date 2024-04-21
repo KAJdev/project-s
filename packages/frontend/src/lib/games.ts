@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { request } from "./api";
-import { stat } from "fs";
+import { Player } from "./scan";
 
 export type GameSettings = {
   max_players: number;
@@ -39,7 +39,7 @@ export type Game = {
   id: ID;
   name: string;
   owner: ID;
-  members: ID[];
+  members: Player[];
   created_at: string;
   started_at: string;
   winner: ID | null;

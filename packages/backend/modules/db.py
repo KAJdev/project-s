@@ -95,7 +95,7 @@ class Game(Document):
     id: str = Field(default_factory=generate_id)
     name: str
     owner: str
-    members: list[str] = Field(default_factory=list)
+    members: list[Link["Player"]] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     started_at: Optional[datetime] = Field(default=None)
     winner: Optional[str] = Field(
@@ -124,8 +124,10 @@ class Research(BaseModel):
 
 class Player(Document):
     id: str = Field(default_factory=generate_id)
-    game: str
+    name: str
+    game: BackLink[Game]
     user: str
+    color: str
 
     # research progress
     research_queue: list[str] = Field(default_factory=list)

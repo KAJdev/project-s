@@ -38,8 +38,10 @@ export type Carrier = {
 
 export type Player = {
   id: ID;
+  name: string;
   game: ID;
   user: ID;
+  color: string;
 
   research_queue: Technology[] | null;
   research: Record<Technology, number>;
@@ -64,8 +66,9 @@ export async function fetchScan(gameId: ID) {
   scanStore.getState().setScan(scan || null);
 }
 
-export function useScan(gameId: ID) {
+export function useScan(gameId: ID | undefined) {
   useEffect(() => {
+    if (!gameId) return;
     fetchScan(gameId);
     const interval = setInterval(() => fetchScan(gameId), 60000);
     return () => clearInterval(interval);
