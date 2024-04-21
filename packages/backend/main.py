@@ -40,7 +40,11 @@ blueprint_names = [
 for extension in blueprint_names:
     if extension.split(".")[-1].startswith("_"):
         continue
-    app.blueprint(__import__(extension, fromlist=["blueprints"]).bp)
+    m = __import__(extension, fromlist=["blueprints"])
+    if not hasattr(m, "bp"):
+        print(f"Blueprint {extension} does not have a 'bp' attribute")
+        continue
+    app.blueprint(m.bp)
     print(f"Loaded blueprint: {extension}")
 
 

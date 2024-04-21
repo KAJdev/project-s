@@ -147,6 +147,7 @@ async def join_game(request: Request, game_id: str):
         color=player_color,
         game=game.id,
         user=request.ctx.user.id,
+        cash=game.settings.starting_cash,
     )
 
     game.members.append(new_player)

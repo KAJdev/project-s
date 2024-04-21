@@ -61,7 +61,10 @@ async def scan_game(
 
     scan: ScanResponse = {
         "game": game.id,
-        "players": [p.dict() for p in players],
+        "players": [
+            (p.dict() if p.id == current_player.id else p.dict_not_self())
+            for p in players
+        ],
         "stars": [],
         "carriers": [],
     }

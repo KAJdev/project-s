@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { request } from "./api";
 import { stat } from "fs";
+import { useSelf } from "./users";
 
 export type Technology =
   | "scanning"
@@ -29,7 +30,7 @@ type StarScanData = {
   warp_gate: boolean | null;
 };
 
-export type Star = (BaseStar & StarScanData) | BaseStar;
+export type Star = BaseStar & Partial<StarScanData>;
 
 export type Carrier = {
   id: ID;
@@ -47,9 +48,11 @@ export type Player = {
   game: ID;
   user: ID;
   color: string;
+  cash?: number;
 
-  research_queue: Technology[] | null;
-  research: Record<Technology, number>;
+  research_queue?: Technology[] | null;
+  research_levels: Record<Technology, number>;
+  research_points?: Record<Technology, number>;
 };
 
 export type Scan = {
@@ -81,4 +84,10 @@ export function useScan(gameId: ID | undefined) {
   }, [gameId]);
 
   return scan;
+}
+
+export function usePlayer() {
+  const scan = scanStore((state) => state.scan);
+  const user = useSelf();
+  return scan?.players.find((p) => p.user === user?.id);
 }

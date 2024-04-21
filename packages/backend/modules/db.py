@@ -1,4 +1,5 @@
 from datetime import datetime, UTC
+from enum import Enum
 from uuid import UUID, uuid4
 from dotenv import load_dotenv
 from os import getenv
@@ -112,6 +113,16 @@ class Game(Document):
         name = "games"
 
 
+class Technology:
+    scanning = "scanning"
+    hyperspace = "hyperspace"
+    terraforming = "terraforming"
+    experimentation = "experimentation"
+    weapons = "weapons"
+    banking = "banking"
+    manufacturing = "manufacturing"
+
+
 class Research(BaseModel):
     scanning: int = Field(default=1)
     hyperspace: int = Field(default=1)
@@ -129,8 +140,10 @@ class Player(Document):
     user: str
     color: str
 
+    cash: float = Field(default=0)
+
     # research progress
-    research_queue: list[str] = Field(default_factory=list)
+    research_queue: list[str] = Field(default_factory=lambda: [Technology.hyperspace])
     research_levels: Research = Field(default_factory=Research)
     research_points: Research = Field(
         default_factory=lambda: Research(**{k: 0 for k in Research.model_fields.keys()})
@@ -141,7 +154,48 @@ class Player(Document):
 
     def dict(self):
         d = super().model_dump()
+        d["cash"] = int(d["cash"])
         return convert_dates_to_iso(d)
+
+    def dict_not_self(self):
+        d = super().model_dump()
+        for k in ("research_queue", "research_points", "cash"):
+            del d[k]
+        d["cash"] = int(d["cash"])
+        return convert_dates_to_iso(d)
+
+    def do_research(self, game: Game, stars: list["Star"]):
+        if not self.research_queue:
+            self.research_queue = [Technology.hyperspace]
+
+        science = sum(s.science for s in stars if s.occupier == self.id)
+        current_tech = self.research_queue[0]
+        setattr(
+            self.research_points,
+            current_tech,
+            getattr(self.research_points, current_tech) + science,
+        )
+        points_to_next_level = getattr(self.research_levels, current_tech) * getattr(
+            game.settings, f"{current_tech}_cost"
+        )
+        excess = getattr(self.research_points, current_tech) - points_to_next_level
+
+        if excess >= 0:
+            setattr(
+                self.research_levels,
+                current_tech,
+                getattr(self.research_levels, current_tech) + 1,
+            )
+            setattr(self.research_points, current_tech, excess)
+            if len(self.research_queue) > 1:
+                self.research_queue.pop(0)
+
+    def do_economy(self, stars: list["Star"]):
+        for star in stars:
+            if star.occupier == self.id:
+                self.cash += (
+                    star.economy / 0.25 / 60
+                )  # because we are running this every minute
 
     class Settings:
         name = "players"
@@ -215,6 +269,26 @@ class Star(Document):
             del d[k]
         return convert_dates_to_iso(d)
 
+    def do_production(self, game: Game):
+        """
+        Produces ships via industry * (occupier.manufacturing + 5) / game production length
+        """
+        if not self.occupier:
+            return
+
+        owner = next(p for p in game.members if p.id == self.occupier)
+        if not owner:
+            return
+
+        self.ship_accum += (
+            self.industry
+            * (owner.research_levels.manufacturing + 5)
+            / game.settings.production_cycle_length
+            / 60  # because we are running this every minute
+        )
+        self.ships += int(self.ship_accum)
+        self.ship_accum -= int(self.ship_accum)
+
     class Settings:
         name = "stars"
 
@@ -231,6 +305,34 @@ class Carrier(Document):
     def dict(self):
         d = super().model_dump()
         return d
+
+    def move(self, game: Game, stars: list[Star]):
+        if not self.destination_queue:
+            return
+
+        destination = next(s for s in stars if s.id == self.destination_queue[0])
+
+        distance = distance(
+            (self.position.x, self.position.y),
+            (destination.position.x, destination.position.y),
+        )
+
+        speed = game.settings.carrier_speed
+        if destination.warp_gate:
+            speed = game.settings.warp_speed
+
+        speed = speed / 60  # because we are running this every minute
+
+        if distance <= speed:
+            self.position = destination.position
+            self.destination_queue.pop(0)
+        else:
+            self.position.x += (
+                (destination.position.x - self.position.x) / distance * speed
+            )
+            self.position.y += (
+                (destination.position.y - self.position.y) / distance * speed
+            )
 
     class Settings:
         name = "carriers"

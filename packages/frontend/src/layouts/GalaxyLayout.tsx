@@ -58,8 +58,10 @@ export function GalaxyLayout() {
 
         {games.map((game, i) => (
           <>
-            <GameItem key={game.id} game={game} />
-            {i < games.length - 1 && <hr className="opacity-10" />}
+            <GameItem game={game} key={game.id} />
+            {i < games.length - 1 && (
+              <hr className="opacity-10" key={keys(game.id, "divider")} />
+            )}
           </>
         ))}
       </div>
