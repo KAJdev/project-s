@@ -105,7 +105,7 @@ export function useGames() {
   return games;
 }
 
-export function useGame(gameId: ID) {
+export function useGame(gameId: ID | undefined) {
   const games = gameStore((state) => state.games);
 
   useEffect(() => {
@@ -122,5 +122,13 @@ export async function createGame(name: string, settings: GameSettings) {
   return await request<Game>("/games", {
     method: "POST",
     body: { name, settings },
+  });
+}
+
+export async function joinGame(gameId: ID, name: string, color: string, password: string | null) {
+  return await request<Player>(`/games/${gameId}/join`, {
+    method: "POST",
+    body: { name, color },
+    params: password ? { p: password } : undefined,
   });
 }

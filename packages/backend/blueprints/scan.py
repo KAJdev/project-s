@@ -3,9 +3,11 @@ from sanic import Blueprint, Request, json, exceptions
 from sanic_ext import openapi
 from modules.db import Carrier, GameSettings, Message, Player, Game, Star, User
 from modules.auth import authorized
+from modules.worldgen import distance
 from modules import gateway
 from beanie.operators import Or, And, In
 from typing import TypedDict
+
 
 MSG_PAGE_SIZE = 100
 
@@ -22,65 +24,46 @@ class ScanResponse(TypedDict):
 @authorized()
 @openapi.operation("Poll a game for changes in state")
 @openapi.description("Poll a game for changes in state")
-async def get_scan(request: Request):
+async def get_scan(request: Request, game_id: str):
+    game = await Game.find_one(Game.id == game_id, Game.members == request.ctx.user.id)
+
+    if not game:
+        raise exceptions.NotFound("Game not found")
+
+    players = await Player.find(Player.game == game_id).to_list(None)
+    stars = await Star.find(Star.game == game_id).to_list(None)
+    carriers = await Carrier.find(Carrier.game == game_id).to_list(None)
+
+    current_player = next(p for p in players if p.user == request.ctx.user.id)
+    player_stars = [s for s in stars if s.occupier == current_player.id]
+    scan_distance = current_player.get_scan_distance()
+
     scan: ScanResponse = {
-        "players": [],
+        "players": [p.dict() for p in players],
         "stars": [],
         "carriers": [],
     }
 
-    scan["players"] = await Player.find(Player.game == request.ctx.game.id).to_list(
-        None
-    )
-    scan["stars"] = await Star.find(Star.game == request.ctx.game.id).to_list(None)
-    scan["carriers"] = await Carrier.find(Carrier.game == request.ctx.game.id).to_list(
-        None
-    )
-
-    player_stars = [
-        star for star in scan["stars"] if star.occupier == request.ctx.user.id
+    # filter things
+    scan["carriers"] = [
+        c.dict()
+        for c in carriers
+        if (
+            any(distance((c.x, c.y), (s.x, s.y)) <= scan_distance for s in player_stars)
+            or c.owner == current_player.id
+        )
     ]
 
-    for carrier in scan["carriers"]:
-        pass
-        # TODO: check to make sure the carrier is within scanning range of a star the player owns
+    for star in stars:
+        if (
+            any(
+                distance((star.x, star.y), (s.x, s.y)) <= scan_distance
+                for s in player_stars
+            )
+            or star.occupier == current_player.id
+        ):
+            scan["stars"].append(star.dict())
+        else:
+            scan["stars"].append(star.dict_unscanned())
 
-    game = await Game.find(
-        Or(Game.members == request.ctx.user.id, Game.owner == request.ctx.user.id),
-        fetch_links=True,
-    ).to_list(None)
-    return json([g.dict() for g in game])
-
-
-@bp.route("/v1/games", methods=["POST"])
-@authorized()
-@openapi.operation("Create a game")
-@openapi.description("Create a game")
-async def create_game(request: Request):
-    data = request.json
-    if not data:
-        raise exceptions.BadRequest("Bad Request")
-
-    name = data.get("name")
-    settings = data.get("settings")
-
-    if not name:
-        raise exceptions.BadRequest("Name is required")
-
-    if not settings:
-        raise exceptions.BadRequest("Settings are required")
-
-    try:
-        settings = GameSettings.model_construct(**settings)
-    except Exception as e:
-        raise exceptions.BadRequest(f"Invalid settings: {e}")
-
-    game = Game(
-        name=data["name"],
-        created_at=datetime.now(UTC),
-        owner=request.ctx.user.id,
-        settings=settings,
-    )
-
-    await game.save()
-    return json(game.dict())
+    return json(scan)

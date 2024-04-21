@@ -90,11 +90,11 @@ async def get_games(request: Request):
 @openapi.parameter("p", str)
 @openapi.operation("Get a specific game")
 @openapi.description("Get a specific game")
-async def get_game(request: Request):
+async def get_game(request: Request, game_id: str):
     password = request.args.get("p", None)
 
     game = await Game.find_one(
-        Or(Game.members.id == request.ctx.user.id, Game.owner == request.ctx.user.id),
+        Game.id == game_id,
         Or(Game.password == password, Game.password == None),
         fetch_links=True,
     )
@@ -118,7 +118,11 @@ async def join_game(request: Request, game_id: str):
     player_name = data.get("name")
     player_color = data.get("color")
 
-    game = await Game.get(game_id, fetch_links=True)
+    game = await Game.find_one(
+        Game.id == game_id,
+        Or(Game.password == password, Game.password == None),
+        fetch_links=True,
+    )
     if not game:
         raise exceptions.NotFound("Game not found")
 

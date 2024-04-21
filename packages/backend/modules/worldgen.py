@@ -1,7 +1,7 @@
 import math
 import random
 
-from packages.backend.modules.db import Position
+from modules.db import Position
 
 
 MIN_STAR_DISTANCE = 0.1

@@ -125,13 +125,19 @@ class Research(BaseModel):
 class Player(Document):
     id: str = Field(default_factory=generate_id)
     name: str
-    game: BackLink[Game]
+    game: BackLink[Game] = Field(original_field="members")
     user: str
     color: str
 
     # research progress
     research_queue: list[str] = Field(default_factory=list)
-    research: Research = Field(default_factory=Research)
+    research_levels: Research = Field(default_factory=Research)
+    research_points: Research = Field(
+        default_factory=lambda: Research(**{k: 0 for k in Research.model_fields.keys()})
+    )
+
+    def get_scan_distance(self) -> int:
+        return 2 + self.research_levels.scanning
 
     def dict(self):
         d = super().model_dump()
@@ -193,6 +199,20 @@ class Star(Document):
 
     def dict(self):
         d = super().model_dump()
+        return convert_dates_to_iso(d)
+
+    def dict_unscanned(self):
+        d = super().model_dump()
+        for k in (
+            "economy",
+            "industry",
+            "science",
+            "resources",
+            "warp_gate",
+            "ships",
+            "ship_accum",
+        ):
+            del d[k]
         return convert_dates_to_iso(d)
 
     class Settings:

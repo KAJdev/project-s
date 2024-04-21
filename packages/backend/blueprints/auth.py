@@ -66,7 +66,7 @@ async def signin(request: Request):
         raise exceptions.Unauthorized("Unauthorized")
 
     if not bcrypt.checkpw(
-        data["password"].encode("utf-8"), user["password"].encode("utf-8")
+        data["password"].encode("utf-8"), user.password.encode("utf-8")
     ):
         raise exceptions.Unauthorized("Unauthorized")
 
