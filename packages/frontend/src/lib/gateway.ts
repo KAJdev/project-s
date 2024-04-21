@@ -1,5 +1,6 @@
 import { Channel, channelStore } from "./channels";
 import { Message, messageStore } from "./messages";
+import { Scan, scanStore } from "./scan";
 import { tokenStore, useToken } from "./token";
 import { User, userStore } from "./users";
 import useWebSocket, { ReadyState } from "react-use-websocket";
@@ -19,6 +20,7 @@ export enum GatewayOpcode {
   USER_LEAVE = 11,
   USER_UPDATE = 12,
   REQUEST_CHANNELS = 13,
+  GALAXY_SCAN = 14,
 }
 
 const connectionStatus = {
@@ -85,6 +87,10 @@ export type GatewayMessage =
   | {
       op: GatewayOpcode.USER_UPDATE;
       d: User;
+    }
+  | {
+      op: GatewayOpcode.GALAXY_SCAN;
+      d: Scan;
     };
 
 function prettyPrint(...args: any[]) {
@@ -159,6 +165,11 @@ export function useGateway() {
         }
         case GatewayOpcode.CHANNEL_UPDATE: {
           channelStore.getState().addChannel(data.d);
+          break;
+        }
+        case GatewayOpcode.GALAXY_SCAN: {
+          prettyPrint("GALAXY SCAN:", data.d);
+          scanStore.getState().setScan(data.d);
           break;
         }
         default: {

@@ -19,6 +19,7 @@ class GatewayOpCode(Enum):
     USER_LEAVE = 11
     USER_UPDATE = 12
     REQUEST_CHANNELS = 13
+    GALAXY_SCAN = 14
 
 
 GATEWAY_CONNECTIONS: dict[str, Websocket] = {}

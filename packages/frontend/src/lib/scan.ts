@@ -53,6 +53,7 @@ export type Player = {
 };
 
 export type Scan = {
+  game: ID;
   stars: Star[];
   carriers: Carrier[];
   players: Player[];
@@ -72,12 +73,12 @@ export async function fetchScan(gameId: ID) {
 }
 
 export function useScan(gameId: ID | undefined) {
+  const scan = scanStore((state) => state.scan);
   useEffect(() => {
-    if (!gameId) return;
+    if (!gameId || scan?.game === gameId) return;
     fetchScan(gameId);
-    const interval = setInterval(() => fetchScan(gameId), 60000);
-    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId]);
 
-  return scanStore((state) => state.scan);
+  return scan;
 }
