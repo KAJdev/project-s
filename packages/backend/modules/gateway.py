@@ -34,7 +34,7 @@ def remove_websocket_connection(user_id: str):
     if user_id in GATEWAY_CONNECTIONS:
         ws = GATEWAY_CONNECTIONS[user_id]
         del GATEWAY_CONNECTIONS[user_id]
-        ws.close()
+        asyncio.create_task(ws.close())
 
 
 def send_to_user(user_id: str, op: GatewayOpCode, data: dict | None = None):

@@ -22,7 +22,9 @@ async def get_messages(request: Request, game_id: str, player_id: str):
         else [request.ctx.user.id, player_id]
     )
 
-    game = await Game.find_one(Game.id == game_id, In(Game.players, members))
+    game = await Game.find_one(
+        Game.id == game_id, In(Game.members.user, members), fetch_links=True
+    )
     if not game:
         raise exceptions.NotFound("Player or Game not found")
 
@@ -80,7 +82,9 @@ async def create_message(request: Request, game_id: str, player_id: str):
         else [request.ctx.user.id, player_id]
     )
 
-    game = await Game.find_one(Game.id == game_id, In(Game.players, members))
+    game = await Game.find_one(
+        Game.id == game_id, In(Game.members.user, members), fetch_links=True
+    )
     if not game:
         raise exceptions.NotFound("Player or Game not found")
 

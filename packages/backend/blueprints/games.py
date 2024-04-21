@@ -42,13 +42,14 @@ async def generate_map(game: Game):
             closest_star = min(
                 normal_stars,
                 key=lambda star: min(
-                    distance((star.x, star.y), (s.x, s.y)) for s in stars
+                    distance((star.x, star.y), (s.position.x, s.position.y))
+                    for s in stars
                 ),
             )
 
             stars.append(
                 Star(
-                    position=closest_star.position,
+                    position=closest_star,
                     name=generate_star_name(),
                     game=game.id,
                     occupier=member.id,
@@ -144,7 +145,7 @@ async def join_game(request: Request, game_id: str):
     new_player = Player(
         name=player_name,
         color=player_color,
-        game=game,
+        game=game.id,
         user=request.ctx.user.id,
     )
 
@@ -193,7 +194,7 @@ async def create_game(request: Request):
 @openapi.operation("Start a game")
 @openapi.description("Start a game")
 async def start_game(request: Request, game_id: str):
-    game = await Game.get(game_id)
+    game = await Game.get(game_id, fetch_links=True)
     if not game:
         raise exceptions.NotFound("Game not found")
 

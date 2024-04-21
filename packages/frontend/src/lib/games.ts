@@ -1,6 +1,14 @@
 import { create } from "zustand";
 import { request } from "./api";
 import { Player } from "./scan";
+import { useSelf } from "./users";
+
+export enum GameState {
+  Waiting, // Waiting for players to join
+  Ready, // Ready to start
+  Running, // Game is running
+  Finished, // Game is finished
+}
 
 export type GameSettings = {
   max_players: number;
@@ -115,7 +123,7 @@ export function useGame(gameId: ID | undefined) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return games.find((game) => game.id === gameId);
+  return games.find((game) => game.id === gameId) || null;
 }
 
 export async function createGame(name: string, settings: GameSettings) {
@@ -125,10 +133,38 @@ export async function createGame(name: string, settings: GameSettings) {
   });
 }
 
-export async function joinGame(gameId: ID, name: string, color: string, password: string | null) {
+export async function joinGame(
+  gameId: ID,
+  name: string,
+  color: string,
+  password: string | null
+) {
   return await request<Player>(`/games/${gameId}/join`, {
     method: "POST",
     body: { name, color },
     params: password ? { p: password } : undefined,
   });
+}
+
+export async function startGame(gameId: ID) {
+  return await request<Game>(`/games/${gameId}/start`, {
+    method: "POST",
+  });
+}
+
+export function getGameState(game: Game | null) {
+  if (!game) return null;
+  if (game.winner) return GameState.Finished;
+  if (game.started_at) return GameState.Running;
+  if (game.members.length >= game.settings.max_players) return GameState.Ready;
+  else return GameState.Waiting;
+}
+
+export function useIsGameJoinable(game: Game | null) {
+  const user = useSelf();
+  if (!game || !user) return false;
+  return (
+    getGameState(game) === GameState.Waiting &&
+    !game.members.find((m) => m.user === user?.id)
+  );
 }

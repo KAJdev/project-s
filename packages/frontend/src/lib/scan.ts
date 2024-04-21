@@ -11,12 +11,15 @@ export type Technology =
   | "banking"
   | "manufacturing";
 
-export type Star = {
+type BaseStar = {
   id: ID;
   game: ID;
   position: { x: number; y: number };
   name: string;
   occupier: ID | null;
+};
+
+type StarScanData = {
   ships: number;
   ship_accum: number;
   economy: number | null;
@@ -25,6 +28,8 @@ export type Star = {
   resources: number | null;
   warp_gate: boolean | null;
 };
+
+export type Star = (BaseStar & StarScanData) | BaseStar;
 
 export type Carrier = {
   id: ID;

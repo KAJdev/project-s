@@ -1,12 +1,29 @@
 import { Link } from "react-router-dom";
 import { Input } from "./Theme/Input";
 import { Button } from "./Theme/Button";
-import { joinGame } from "@/lib/games";
+import { Game, joinGame } from "@/lib/games";
+import { Label } from "./Theme/Label";
+import { fetchScan } from "@/lib/scan";
 
 type PlayerForm = {
   name: string;
   color: string;
 };
+
+const colors = [
+  "#ef4444",
+  "#f97316",
+  "#eab308",
+  "#84cc16",
+  "#22c55e",
+  "#14b8a6",
+  "#06b6d4",
+  "#3b82f6",
+  "#6366f1",
+  "#8b5cf6",
+  "#d946ef",
+  "#ec4899",
+];
 
 export function JoinGame({
   gameId,
@@ -15,14 +32,19 @@ export function JoinGame({
   gameId: string;
   game: Game | null;
 }) {
-  const [gameForm, setGameForm] = useState<PlayerForm>({
-    name: "",
-    color: "red",
-  });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  if (!game) return <p>Loading...</p>;
+  const availableColors = colors.filter(
+    (c) => !game?.members.map((m) => m.color).includes(c)
+  );
+
+  const [gameForm, setGameForm] = useState<PlayerForm>({
+    name: "",
+    color: availableColors[0] || "#000000",
+  });
+
+  if (!game) return <></>;
 
   return (
     <div className="w-screen h-screen flex items-center justify-center">
@@ -42,12 +64,24 @@ export function JoinGame({
             onChange={(e) => setGameForm({ ...gameForm, name: e })}
           />
 
-          <Input
-            label="Color"
-            type="color"
-            value={gameForm.color}
-            onChange={(e) => setGameForm({ ...gameForm, color: e })}
-          />
+          <div className="flex flex-col gap-1 w-full">
+            <Label>Color</Label>
+            <div className="flex gap-2 flex-wrap mb-2">
+              {availableColors.map((c) => (
+                <button
+                  key={c}
+                  className={classes(
+                    "w-8 h-8 rounded-full border",
+                    gameForm.color === c
+                      ? "border-white/75"
+                      : "border-transparent border opacity-50 hover:opacity-90"
+                  )}
+                  style={{ backgroundColor: c }}
+                  onClick={() => setGameForm({ ...gameForm, color: c })}
+                />
+              ))}
+            </div>
+          </div>
           <div className="flex justify-between items-center gap-2">
             {error ? <p className="text-red-500 text-sm">{error}</p> : <div />}
 
@@ -58,6 +92,7 @@ export function JoinGame({
               <Button
                 variant="vibrant"
                 loading={loading}
+                disabled={!gameForm.name}
                 onClick={() => {
                   setLoading(true);
                   setError(null);
@@ -65,7 +100,7 @@ export function JoinGame({
                   joinGame(gameId, gameForm.name, gameForm.color, null)
                     .then(() => {
                       setLoading(false);
-                      window.location.href = `/app/game/${gameId}`;
+                      fetchScan(gameId);
                     })
                     .catch((e) => {
                       setLoading(false);

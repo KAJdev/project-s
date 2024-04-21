@@ -125,7 +125,7 @@ class Research(BaseModel):
 class Player(Document):
     id: str = Field(default_factory=generate_id)
     name: str
-    game: BackLink[Game] = Field(original_field="members")
+    game: str
     user: str
     color: str
 

@@ -25,7 +25,9 @@ class ScanResponse(TypedDict):
 @openapi.operation("Poll a game for changes in state")
 @openapi.description("Poll a game for changes in state")
 async def get_scan(request: Request, game_id: str):
-    game = await Game.find_one(Game.id == game_id, Game.members == request.ctx.user.id)
+    game = await Game.find_one(
+        Game.id == game_id, Game.members.user == request.ctx.user.id, fetch_links=True
+    )
 
     if not game:
         raise exceptions.NotFound("Game not found")
@@ -49,7 +51,11 @@ async def get_scan(request: Request, game_id: str):
         c.dict()
         for c in carriers
         if (
-            any(distance((c.x, c.y), (s.x, s.y)) <= scan_distance for s in player_stars)
+            any(
+                distance((c.position.x, c.position.y), (s.position.x, s.position.y))
+                <= scan_distance
+                for s in player_stars
+            )
             or c.owner == current_player.id
         )
     ]
@@ -57,7 +63,10 @@ async def get_scan(request: Request, game_id: str):
     for star in stars:
         if (
             any(
-                distance((star.x, star.y), (s.x, s.y)) <= scan_distance
+                distance(
+                    (star.position.x, star.position.y), (s.position.x, s.position.y)
+                )
+                <= scan_distance
                 for s in player_stars
             )
             or star.occupier == current_player.id

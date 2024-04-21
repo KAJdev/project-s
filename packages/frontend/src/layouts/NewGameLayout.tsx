@@ -207,6 +207,7 @@ export function NewGameLayout() {
             <Button
               variant="vibrant"
               loading={loading}
+              disabled={!gameForm.name}
               onClick={() => {
                 setLoading(true);
                 setError(null);

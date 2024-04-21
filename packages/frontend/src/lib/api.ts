@@ -16,25 +16,30 @@ export async function request<T>(
     queryString ? `?${queryString}` : ""
   }`;
 
-  const response = await authFetch(urlWithParams, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    ...(body && ["POST", "PUT", "PATCH"].includes(method)
-      ? { body: JSON.stringify(body) }
-      : {}),
-  });
+  try {
+    const response = await authFetch(urlWithParams, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      ...(body && ["POST", "PUT", "PATCH"].includes(method)
+        ? { body: JSON.stringify(body) }
+        : {}),
+    });
 
-  const data = await response.text();
+    const data = await response.text();
 
-  if (!response.ok) {
-    console.error(data);
+    if (!response.ok) {
+      console.error(data);
+      return null;
+    }
+
+    const parsed = JSON.parse(data) as T;
+
+    return parsed;
+  } catch (e) {
+    console.error(e);
     return null;
   }
-
-  const parsed = JSON.parse(data) as T;
-
-  return parsed;
 }
