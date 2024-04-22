@@ -3,7 +3,7 @@ import { getHyperSpaceDistance, getScanningDistance } from "@/lib/players";
 import { Scan, usePlayer } from "@/lib/scan";
 import { Circle } from "react-konva";
 
-export function ScanCircle({ scan, starId }: { scan: Scan; starId: ID }) {
+export function HyperspaceCircle({ scan, starId }: { scan: Scan; starId: ID }) {
   const player = usePlayer();
   const star = scan.stars.find((s) => s.id === starId);
 
@@ -15,9 +15,9 @@ export function ScanCircle({ scan, starId }: { scan: Scan; starId: ID }) {
     <Circle
       x={star.position.x}
       y={star.position.y}
-      radius={getScanningDistance(player)}
+      radius={getHyperSpaceDistance(player)}
       opacity={1}
-      fill={darken(player.color, -150)}
+      fill={darken(player.color, -170)}
       listening={false}
     />
   );

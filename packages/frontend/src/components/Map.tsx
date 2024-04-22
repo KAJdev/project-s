@@ -6,12 +6,21 @@ import { MapStar } from "./Map/Star";
 import { mapState } from "@/lib/map";
 import { ScanCircle } from "./Map/ScanCircle";
 import { UseKeyOptions } from "react-use/lib/useKey";
+import { HyperspaceCircle } from "./Map/HyperspaceCircle";
+
+function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
+  return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
+}
 
 export function Map({ game }: { game: Game }) {
   const scan = useScan(game.id);
   const { zoom, camera, panning } = mapState();
   const { width, height } = useWindowSize();
   const stage = React.useRef<any>(null);
+  const lastPointerDownPosition = useRef<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  });
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
@@ -53,7 +62,11 @@ export function Map({ game }: { game: Game }) {
         x={camera.x}
         y={camera.y}
         onMouseUp={(e) => {
-          if (e.evt.button === 0) {
+          const pointer = e.target.getStage()!.getPointerPosition()!;
+          if (
+            e.evt.button === 0 &&
+            distance(pointer, lastPointerDownPosition.current) < 2
+          ) {
             mapState.getState().setSelected(null);
           }
           if (panning) {
@@ -73,6 +86,8 @@ export function Map({ game }: { game: Game }) {
         }}
         onMouseDown={(e) => {
           if (e.evt.button === 0) {
+            const pointer = e.target.getStage()!.getPointerPosition()!;
+            lastPointerDownPosition.current = pointer;
             mapState.getState().setPanning(true);
           }
         }}
@@ -82,6 +97,11 @@ export function Map({ game }: { game: Game }) {
           }
         }}
       >
+        <Layer>
+          {scan?.stars.map((star) => (
+            <HyperspaceCircle key={star.id} scan={scan} starId={star.id} />
+          ))}
+        </Layer>
         <Layer>
           {scan?.stars.map((star) => (
             <ScanCircle key={star.id} scan={scan} starId={star.id} />

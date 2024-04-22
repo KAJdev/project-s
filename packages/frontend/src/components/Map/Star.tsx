@@ -77,41 +77,32 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
       )}
       <Text
         x={star.position.x - 50 / zoom}
-        y={star.position.y - 30 / zoom}
+        y={star.position.y - 0.1 / zoom - starSize / 0.8}
         width={100 / zoom}
-        text={`${star.economy} ${star.industry} ${star.science}`}
-        fontSize={14 / zoom}
+        text={`${star.economy}  ${star.industry}  ${star.science}`}
+        fontSize={16 / zoom}
         fill="white"
         align="center"
         listening={false}
         visible={
-          (hovered || isSelected) &&
+          (hovered || isSelected || zoom > 10) &&
           star.science !== undefined &&
           star.industry !== undefined &&
           star.economy !== undefined
         }
       />
       <Text
-        x={star.position.x - 250 / zoom}
-        y={star.position.y + 20 / zoom}
-        width={500 / zoom}
-        text={star.name}
+        x={star.position.x - 250}
+        y={star.position.y + starSize * 0.8}
+        width={500}
+        text={`${hovered || isSelected || zoom > 20 ? star.name + "\n" : ""}${
+          (star.ships ?? 0) > 0 ? "🚀" + star.ships : ""
+        }${star.occupier && zoom > 25 ? "\n" + owner?.name : ""}`}
         fontSize={14 / zoom}
         fill="white"
         align="center"
         listening={false}
-        visible={hovered || isSelected}
-      />
-      <Text
-        x={star.position.x - 50 / zoom}
-        y={star.position.y + 40 / zoom}
-        width={100 / zoom}
-        text={`${star.ships} Ships`}
-        fontSize={10 / zoom}
-        fill="white"
-        align="center"
-        listening={false}
-        visible={star.ships !== undefined && (hovered || isSelected)}
+        lineHeight={1.4}
       />
 
       {isSelected && (
