@@ -168,8 +168,11 @@ export function useGateway() {
           break;
         }
         case GatewayOpcode.GALAXY_SCAN: {
-          prettyPrint("GALAXY SCAN:", data.d);
-          scanStore.getState().setScan(data.d);
+          const currentScan = scanStore.getState().scan;
+          if (currentScan?.game === data.d.game) {
+            prettyPrint("GALAXY SCAN:", data.d);
+            scanStore.getState().setScan(data.d);
+          }
           break;
         }
         default: {

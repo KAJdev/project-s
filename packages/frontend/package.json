@@ -20,6 +20,7 @@
     "@types/react-file-icon": "^1.0.4",
     "@types/react-virtualized": "^9.21.27",
     "autoprefixer": "10.4.16",
+    "canvas": "^2.11.2",
     "d3-force": "^3.0.0",
     "eslint": "8.49.0",
     "eslint-config-next": "13.5.2",

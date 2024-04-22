@@ -18,7 +18,7 @@ export type MapState = {
 };
 
 export const mapState = create<MapState>((set) => ({
-  zoom: 10,
+  zoom: 100,
   camera: { x: 0, y: 0 },
   selected: null,
   panning: false,

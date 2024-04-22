@@ -1,33 +1,77 @@
-export function darken(color: string, factor: number) {
-  // Ensure the factor is within 0 to 1 range
-  factor = Math.max(0, Math.min(1, factor));
-
-  // Validate the hex color format and remove the leading '#' if it's there
-  if (!/^#?[0-9A-Fa-f]{6}$/.test(color)) {
-    throw new Error("Invalid HEX color format");
+export function darken(col: string, amt: number) {
+  var usePound = false;
+  if (col[0] == "#") {
+    col = col.slice(1);
+    usePound = true;
   }
-  color = color.replace(/^#/, "");
 
-  // Parse the hex string into integers using parseInt
-  let r = parseInt(color.substr(0, 2), 16);
-  let g = parseInt(color.substr(2, 2), 16);
-  let b = parseInt(color.substr(4, 2), 16);
+  var num = parseInt(col, 16);
 
-  // Darken each color component by the factor
-  r = Math.floor(r * (1 - factor));
-  g = Math.floor(g * (1 - factor));
-  b = Math.floor(b * (1 - factor));
+  var r = (num >> 16) + amt;
 
-  // Use Intl.NumberFormat to format numbers as hexadecimal
-  const toHex = (value: number): string => {
-    return new Intl.NumberFormat("en-US", {
-      minimumIntegerDigits: 2,
-      useGrouping: false,
-    })
-      .format(value)
-      .toUpperCase();
+  if (r > 255) r = 255;
+  else if (r < 0) r = 0;
+
+  var b = ((num >> 8) & 0x00ff) + amt;
+
+  if (b > 255) b = 255;
+  else if (b < 0) b = 0;
+
+  var g = (num & 0x0000ff) + amt;
+
+  if (g > 255) g = 255;
+  else if (g < 0) g = 0;
+
+  return (usePound ? "#" : "") + (g | (b << 8) | (r << 16)).toString(16);
+}
+
+export function hexToRgb(hex: string) {
+  if (!hex) {
+    return { r: 0, g: 0, b: 0 };
+  }
+
+  const bigint = parseInt(hex.replace("#", ""), 16);
+  return {
+    r: (bigint >> 16) & 255,
+    g: (bigint >> 8) & 255,
+    b: bigint & 255,
   };
+}
 
-  // Convert each component back to hex and format properly
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+export function hexToHSV(hex: string) {
+  const { r, g, b } = hexToRgb(hex);
+  return rgbToHsv(r, g, b);
+}
+function rgbToHsv(r: number, g: number, b: number) {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const delta = max - min;
+
+  let h = 0;
+  let s = 0;
+  let v = max;
+
+  if (delta !== 0) {
+    s = delta / max;
+
+    if (r === max) {
+      h = (g - b) / delta;
+    } else if (g === max) {
+      h = 2 + (b - r) / delta;
+    } else {
+      h = 4 + (r - g) / delta;
+    }
+
+    h *= 60;
+
+    if (h < 0) {
+      h += 360;
+    }
+  }
+
+  return { h, s, v };
 }

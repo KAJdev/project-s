@@ -246,7 +246,7 @@ def generate_star_positions(
     # make some stars for the players exactly on the edge of the galaxy so they're evenly spaced
     for i in range(player_count):
         theta = i * 2 * 3.14159 / player_count
-        x, y = GALAXY_SIZE * math.cos(theta), GALAXY_SIZE * math.sin(theta)
+        x, y = (GALAXY_SIZE / 2) * math.cos(theta), GALAXY_SIZE * math.sin(theta)
         player_stars.append(Position(x=x, y=y))
 
     while (
@@ -255,7 +255,7 @@ def generate_star_positions(
     ):
         iteration += 1
 
-        r = random.random() * GALAXY_SIZE
+        r = random.random() * (GALAXY_SIZE / 2)
         theta = random.random() * 2 * 3.14159
         x, y = r * math.cos(theta), r * math.sin(theta)
 
