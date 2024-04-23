@@ -1,13 +1,53 @@
 /* eslint-disable jsx-a11y/alt-text */
-import { hexToHSV, hexToRgb } from "@/lib/color";
+import { darken, hexToHSV, hexToRgb } from "@/lib/color";
 import { useImage } from "@/lib/image";
 import { mapState } from "@/lib/map";
 import { Scan } from "@/lib/scan";
 import Konva from "konva";
-import { Arc, Circle, Image, Line, Text } from "react-konva";
+import { Arc, Circle, Image, Line, Rect, Text } from "react-konva";
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
+}
+
+function RotatingArcs({
+  x,
+  y,
+  starSize,
+  zoom,
+  speed,
+}: {
+  x: number;
+  y: number;
+  starSize: number;
+  zoom: number;
+  speed: number;
+}) {
+  const [r, setR] = useState<number>(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setR((r: number) => r + speed);
+    }, 10);
+
+    return () => clearInterval(interval);
+  }, [speed]);
+
+  const arcs = Array.from({ length: 4 }, (_, i) => (
+    <Arc
+      key={i}
+      x={x}
+      y={y}
+      innerRadius={starSize / 1.55}
+      outerRadius={starSize / 1.4}
+      angle={30}
+      rotation={i * 90 + 30 + r}
+      fill="white"
+      opacity={0.5}
+    />
+  ));
+
+  return arcs;
 }
 
 export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
@@ -21,12 +61,12 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
   const isSelected =
     selectedEntity?.type === "star" && selectedEntity.id === starId;
 
-  const starSize = Math.min(
-    2,
-    lerp(10, 40, (star?.resources ?? 25) / 50) / zoom
+  const starSize = Math.max(
+    Math.min(2, lerp(30, 80, (star?.resources ?? 25) / 50) / zoom),
+    0.2
   );
 
-  const color = owner?.color || "#080808";
+  const color = owner?.color || "#888";
 
   if (!star) {
     return null;
@@ -75,34 +115,38 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
           }}
         />
       )}
-      <Text
-        x={star.position.x - 50 / zoom}
-        y={star.position.y - 0.1 / zoom - starSize / 0.8}
-        width={100 / zoom}
-        text={`${star.economy}  ${star.industry}  ${star.science}`}
-        fontSize={16 / zoom}
-        fill="white"
-        align="center"
-        listening={false}
-        visible={
-          (hovered || isSelected || zoom > 10) &&
-          star.science !== undefined &&
-          star.industry !== undefined &&
-          star.economy !== undefined
-        }
+
+      {(hovered || isSelected) && (
+        <RotatingArcs
+          x={star.position.x}
+          y={star.position.y}
+          starSize={starSize}
+          zoom={zoom}
+          speed={1}
+        />
+      )}
+      <Rect
+        x={star.position.x + starSize / 1.3}
+        y={star.position.y - 11 / zoom}
+        width={(star.name.length * 7 + 22) / zoom}
+        height={20 / zoom}
+        fill={color}
+        opacity={0.5}
+        visible={hovered || isSelected || zoom > 20}
       />
       <Text
-        x={star.position.x - 250}
-        y={star.position.y + starSize * 0.8}
-        width={500}
-        text={`${hovered || isSelected || zoom > 20 ? star.name + "\n" : ""}${
-          (star.ships ?? 0) > 0 ? "🚀" + star.ships : ""
-        }${star.occupier && zoom > 25 ? "\n" + owner?.name : ""}`}
+        x={star.position.x + starSize / 1.1}
+        y={star.position.y}
+        width={500 / zoom}
+        height={10 / zoom}
+        text={star.name}
+        fontFamily="monospace"
         fontSize={14 / zoom}
         fill="white"
-        align="center"
+        align="left"
         listening={false}
-        lineHeight={1.4}
+        lineHeight={0}
+        visible={hovered || isSelected || zoom > 20}
       />
 
       {isSelected && (
@@ -112,12 +156,12 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
               key={i}
               x={star.position.x}
               y={star.position.y}
-              innerRadius={30 / zoom / 0.3}
-              outerRadius={30 / zoom / 0.29}
+              innerRadius={30 / zoom}
+              outerRadius={30 / zoom / 1.1}
               angle={30}
               rotation={i * 90 + 30}
               fill="white"
-              opacity={0.5}
+              opacity={1}
             />
           ))}
         </>

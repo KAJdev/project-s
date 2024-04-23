@@ -1,5 +1,7 @@
 # Project S
 
+![project s screenshot](/splash.png)
+
 > [!IMPORTANT]
 > This project is in its infancy, and \***\*WILL NOT WORK\*\*** in its current state. Any issues created will be marked as wontfix and you will be sad and I will laugh.
 

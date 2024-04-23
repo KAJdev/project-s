@@ -14,6 +14,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Orbit } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { Map } from "@/components/Map";
+import { LeftInspector } from "@/components/LeftInspector";
 
 export function GameLayout() {
   const { gameId } = useParams();
@@ -44,7 +45,14 @@ export function GameLayout() {
   }
 
   if (state === GameState.Running) {
-    return <Map game={game} />;
+    return (
+      <>
+        <div className="w-screen h-screen flex justify-between sm:p-8 absolute z-10 pointer-events-none">
+          <LeftInspector />
+        </div>
+        <Map game={game} />
+      </>
+    );
   }
 
   return (

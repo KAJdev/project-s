@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { request } from "./api";
 import { stat } from "fs";
 import { useSelf } from "./users";
+import { useGame } from "./games";
 
 export type Technology =
   | "scanning"
@@ -90,4 +91,45 @@ export function usePlayer() {
   const scan = scanStore((state) => state.scan);
   const user = useSelf();
   return scan?.players.find((p) => p.user === user?.id);
+}
+
+export function useSpecificPlayer(playerId: ID | undefined) {
+  const scan = scanStore((state) => state.scan);
+  return scan?.players.find((p) => p.id === playerId);
+}
+
+export function useStar(starId: ID) {
+  const scan = scanStore((state) => state.scan);
+  return scan?.stars.find((s) => s.id === starId);
+}
+
+export function useStarCosts(starId: ID | undefined): {
+  economy: number;
+  industry: number;
+  science: number;
+  warp_gate: number;
+} {
+  const scan = scanStore((state) => state.scan);
+  const game = useGame(scan?.game);
+  const star = scan?.stars.find((s) => s.id === starId);
+  const player = scan?.players.find((p) => p.id === star?.occupier);
+
+  if (!game || !player)
+    return { economy: 0, industry: 0, science: 0, warp_gate: 0 };
+
+  const terraforming_level = player.research_levels.terraforming;
+  const resources = star?.resources || 0;
+
+  const economy =
+    (2.5 * 2 * (star?.economy || 0 + 1)) /
+    ((resources + 5 * terraforming_level) / 100);
+  const industry =
+    (5 * 2 * (star?.industry || 0 + 1)) /
+    ((resources + 5 * terraforming_level) / 100);
+  const science =
+    (20 * 2 * (star?.science || 0 + 1)) /
+    ((resources + 5 * terraforming_level) / 100);
+  const warp_gate = (50 * 2 * 100) / (resources + 5 * terraforming_level);
+
+  return { economy, industry, science, warp_gate };
 }

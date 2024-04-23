@@ -53,7 +53,7 @@ export function Map({ game }: { game: Game }) {
   }, [camera.x, camera.y, height, width, zoom]);
 
   return (
-    <div className="w-screen h-screen overflow-hidden">
+    <div className="w-screen h-screen overflow-hidden bg-[#081118]">
       <Stage
         width={width}
         ref={stage}
@@ -99,12 +99,22 @@ export function Map({ game }: { game: Game }) {
       >
         <Layer>
           {scan?.stars.map((star) => (
-            <HyperspaceCircle key={star.id} scan={scan} starId={star.id} />
+            <HyperspaceCircle
+              key={star.id}
+              scan={scan}
+              starId={star.id}
+              zoom={zoom}
+            />
           ))}
         </Layer>
         <Layer>
           {scan?.stars.map((star) => (
-            <ScanCircle key={star.id} scan={scan} starId={star.id} />
+            <ScanCircle
+              key={star.id}
+              scan={scan}
+              starId={star.id}
+              zoom={zoom}
+            />
           ))}
         </Layer>
         <Layer>

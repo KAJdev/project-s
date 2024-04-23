@@ -39,6 +39,7 @@ declare global {
   var doNothing: (...args: unknown[]) => void;
   var clamp: (min: number, value: number, max: number) => number;
   var toJSON: (value: unknown) => string;
+  var exists: (value: any) => boolean;
 }
 
 namespace IDNamespace {
@@ -95,6 +96,10 @@ globalThis.toJSON = function (value) {
   } catch (ignored) {
     return `{ "message": "Failed to parse JSON: \`${value}\`" }`;
   }
+};
+
+globalThis.exists = function (value) {
+  return value !== null && value !== undefined;
 };
 
 // suppress useLayoutEffect (and its warnings) when not running in a browser
