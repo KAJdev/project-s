@@ -6,7 +6,7 @@ export function LeftInspector() {
   const { selected } = mapState();
 
   return (
-    <div className="flex flex-col gap-4 w-full">
+    <div className="flex flex-col sm:gap-4 w-full">
       <SelfInspect />
       {selected?.type === "star" && <StarInspect starId={selected.id} />}
     </div>

@@ -4,7 +4,7 @@ import random
 from modules.db import Position
 
 
-MIN_STAR_DISTANCE = 0.1
+MIN_STAR_DISTANCE = 0.5
 GALAXY_SIZE = 100
 MAX_ITERATIONS = 10000
 
@@ -255,8 +255,9 @@ def generate_star_positions(
     ):
         iteration += 1
 
-        r = random.random() * (GALAXY_SIZE / 2)
+        r = math.sqrt(random.random()) * GALAXY_SIZE / 2
         theta = random.random() * 2 * 3.14159
+
         x, y = r * math.cos(theta), r * math.sin(theta)
 
         if not any(

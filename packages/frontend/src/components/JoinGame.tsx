@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Input } from "./Theme/Input";
 import { Button } from "./Theme/Button";
-import { Game, joinGame } from "@/lib/games";
+import { Game, fetchGames, joinGame } from "@/lib/games";
 import { Label } from "./Theme/Label";
 import { fetchScan } from "@/lib/scan";
 
@@ -100,6 +100,7 @@ export function JoinGame({
                   joinGame(gameId, gameForm.name, gameForm.color, null)
                     .then(() => {
                       setLoading(false);
+                      fetchGames();
                       fetchScan(gameId);
                     })
                     .catch((e) => {

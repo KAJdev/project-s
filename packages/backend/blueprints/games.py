@@ -41,10 +41,7 @@ async def generate_map(game: Game):
         for i in range(game.settings.starting_stars - 1):
             closest_star = min(
                 normal_stars,
-                key=lambda star: min(
-                    distance((star.x, star.y), (s.position.x, s.position.y))
-                    for s in stars
-                ),
+                key=lambda star: distance((star.x, star.y), (position.x, position.y)),
             )
 
             stars.append(
@@ -206,6 +203,33 @@ async def start_game(request: Request, game_id: str):
         raise exceptions.BadRequest("Game already started")
 
     game.started_at = datetime.now(UTC)
+    await game.save()
+    await generate_map(game)
+
+    return json(game.dict())
+
+
+@bp.route("/v1/games/<game_id>/restart", methods=["POST"])
+@authorized()
+@openapi.exclude()
+async def restart_game(request: Request, game_id: str):
+    game = await Game.get(game_id, fetch_links=True)
+    if not game:
+        raise exceptions.NotFound("Game not found")
+
+    if game.owner != request.ctx.user.id:
+        raise exceptions.Forbidden("You do not own this game")
+
+    if not game.started_at:
+        raise exceptions.BadRequest("Game not yet started")
+
+    game.started_at = datetime.now(UTC)
+    game.winner = None
+    await Star.find(Star.game == game.id).delete_many()
+    await Message.find(Message.game == game.id).delete_many()
+    await Player.find(Player.game == game.id).update_many(
+        {"$set": {"cash": game.settings.starting_cash}}
+    )
     await game.save()
     await generate_map(game)
 

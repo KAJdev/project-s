@@ -4,7 +4,7 @@ import { KonvaNodeComponent, Layer, Stage, StageProps } from "react-konva";
 import { useWindowSize } from "react-use";
 import { MapStar } from "./Map/Star";
 import { mapState } from "@/lib/map";
-import { ScanCircle } from "./Map/ScanCircle";
+import { InnerScanCircle, OuterScanCircle } from "./Map/ScanCircle";
 import { UseKeyOptions } from "react-use/lib/useKey";
 import { HyperspaceCircle } from "./Map/HyperspaceCircle";
 
@@ -109,7 +109,15 @@ export function Map({ game }: { game: Game }) {
         </Layer>
         <Layer>
           {scan?.stars.map((star) => (
-            <ScanCircle
+            <OuterScanCircle
+              key={star.id}
+              scan={scan}
+              starId={star.id}
+              zoom={zoom}
+            />
+          ))}
+          {scan?.stars.map((star) => (
+            <InnerScanCircle
               key={star.id}
               scan={scan}
               starId={star.id}

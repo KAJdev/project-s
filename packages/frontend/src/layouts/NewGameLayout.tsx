@@ -1,6 +1,11 @@
 import { Button } from "@/components/Theme/Button";
 import { Input } from "@/components/Theme/Input";
-import { GameSettings, createGame, defaultGameSettings } from "@/lib/games";
+import {
+  GameSettings,
+  createGame,
+  defaultGameSettings,
+  fetchGames,
+} from "@/lib/games";
 import { Link, useNavigate } from "react-router-dom";
 
 type GameForm = {
@@ -217,6 +222,7 @@ export function NewGameLayout() {
                   if (!game) {
                     setError("Failed to create game");
                   } else {
+                    fetchGames();
                     nav(`/app/games/${game.id}`);
                   }
                 });

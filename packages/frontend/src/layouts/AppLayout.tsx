@@ -24,7 +24,7 @@ function AppElement() {
       <Outlet />
       <div
         className={classes(
-          "w-full h-full absolute z-100 bg-black opacity-100 duration-200 flex items-center justify-center",
+          "w-full h-full absolute z-[100] bg-black opacity-100 duration-200 flex items-center justify-center",
           isReady
             ? "opacity-0 pointer-events-none"
             : "opacity-100 pointer-events-auto"
@@ -50,6 +50,10 @@ export function AppLayout() {
       children: [
         {
           index: true,
+          element: <GalaxyLayout />,
+        },
+        {
+          path: "games",
           element: <GalaxyLayout />,
         },
         {

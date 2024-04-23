@@ -3,11 +3,113 @@ import { darken, hexToHSV, hexToRgb } from "@/lib/color";
 import { useImage } from "@/lib/image";
 import { mapState } from "@/lib/map";
 import { Scan } from "@/lib/scan";
-import Konva from "konva";
-import { Arc, Circle, Image, Line, Rect, Text } from "react-konva";
+import { Html } from "react-konva-utils";
+import { Arc, Circle, Image } from "react-konva";
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
+}
+
+function pointWithinRect(
+  x: number,
+  y: number,
+  rect: { x: number; y: number; width: number; height: number }
+) {
+  return (
+    x >= rect.x &&
+    x <= rect.x + rect.width &&
+    y >= rect.y &&
+    y <= rect.y + rect.height
+  );
+}
+
+function starInViewport(
+  star: { position: { x: number; y: number } },
+  viewport: {
+    x: number;
+    y: number;
+    zoom: number;
+    width: number;
+    height: number;
+  }
+) {
+  const { x, y } = star.position;
+  const { zoom, width, height } = viewport;
+
+  return pointWithinRect(x, y, {
+    x: viewport.x,
+    y: viewport.y,
+    width: width / zoom,
+    height: height / zoom,
+  });
+}
+
+function StarName({
+  name,
+  color,
+  resources,
+  ships,
+}: {
+  name: string;
+  color: string | null;
+  resources: {
+    economy: number;
+    industry: number;
+    science: number;
+  } | null;
+  ships: number | null;
+}) {
+  const ref = React.useRef(null);
+  if (!color) {
+    color = "#888888";
+  }
+  return (
+    <div
+      className="flex gap-2"
+      style={{
+        transform: "translateY(-50%)",
+        fontFamily: "monospace",
+        fontSize: 14,
+      }}
+    >
+      <p
+        className="px-2 border"
+        style={{
+          backgroundColor: darken(color, -200),
+          borderColor: color,
+        }}
+        ref={ref}
+      >
+        {name}
+      </p>
+      {exists(ships) && (
+        <p
+          className="px-2 border"
+          style={{
+            backgroundColor: darken(color, -200),
+            borderColor: color,
+          }}
+          ref={ref}
+        >
+          {ships} 🚀
+        </p>
+      )}
+
+      {/* {resources && (
+        <div
+          className="flex gap-5 px-2"
+          style={{
+            borderColor: color,
+            fontSize: 12,
+          }}
+        >
+          <p>{resources.economy}</p>
+          <p>{resources.industry}</p>
+          <p>{resources.science}</p>
+        </div>
+      )} */}
+    </div>
+  );
 }
 
 function RotatingArcs({
@@ -56,17 +158,13 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
   const star = scan.stars.find((s) => s.id === starId);
   const owner = scan.players.find((p) => p.id === star?.occupier);
   const [hovered, setHovered] = useState(false);
-  const zoom = mapState((s) => s.zoom);
-  const selectedEntity = mapState((s) => s.selected);
+  const [zoom, selectedEntity] = mapState((s) => [s.zoom, s.selected]);
   const isSelected =
     selectedEntity?.type === "star" && selectedEntity.id === starId;
 
-  const starSize = Math.max(
-    Math.min(2, lerp(30, 80, (star?.resources ?? 25) / 50) / zoom),
-    0.2
-  );
+  const starSize = Math.max(Math.min(1, lerp(30, 80, 0 / 50) / zoom), 0.1);
 
-  const color = owner?.color || "#888";
+  const color = owner?.color || null;
 
   if (!star) {
     return null;
@@ -90,16 +188,18 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
               mapState.getState().setSelected({ type: "star", id: star.id });
             }}
           />
-          <Arc
-            x={star.position.x}
-            y={star.position.y}
-            innerRadius={starSize / 2}
-            outerRadius={starSize / 1.6}
-            angle={360}
-            fill={color}
-            opacity={0.5}
-            listening={false}
-          />
+          {color && (
+            <Arc
+              x={star.position.x}
+              y={star.position.y}
+              innerRadius={starSize / 2}
+              outerRadius={starSize / 1.6}
+              angle={360}
+              fill={color}
+              opacity={0.5}
+              listening={false}
+            />
+          )}
         </>
       ) : (
         <Circle
@@ -125,29 +225,37 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
           speed={1}
         />
       )}
-      <Rect
-        x={star.position.x + starSize / 1.3}
-        y={star.position.y - 11 / zoom}
-        width={(star.name.length * 7 + 22) / zoom}
-        height={20 / zoom}
-        fill={color}
-        opacity={0.5}
-        visible={hovered || isSelected || zoom > 20}
-      />
-      <Text
-        x={star.position.x + starSize / 1.1}
-        y={star.position.y}
-        width={500 / zoom}
-        height={10 / zoom}
-        text={star.name}
-        fontFamily="monospace"
-        fontSize={14 / zoom}
-        fill="white"
-        align="left"
-        listening={false}
-        lineHeight={0}
-        visible={hovered || isSelected || zoom > 20}
-      />
+
+      {(hovered || isSelected || zoom > 20) && (
+        <Html
+          groupProps={{
+            x: star.position.x + starSize / 1.1,
+            y: star.position.y,
+            scale: { x: 1 / zoom, y: 1 / zoom },
+          }}
+          divProps={{
+            style: {
+              pointerEvents: "none",
+              zIndex: isSelected || hovered ? 100 : 0,
+            },
+          }}
+        >
+          <StarName
+            name={star.name}
+            color={color}
+            ships={star.ships ?? null}
+            resources={
+              star.resources
+                ? {
+                    economy: star.economy!,
+                    industry: star.industry!,
+                    science: star.science!,
+                  }
+                : null
+            }
+          />
+        </Html>
+      )}
 
       {isSelected && (
         <>

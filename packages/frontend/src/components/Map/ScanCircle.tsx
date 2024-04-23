@@ -1,9 +1,40 @@
 import { darken } from "@/lib/color";
 import { getHyperSpaceDistance, getScanningDistance } from "@/lib/players";
 import { Scan, usePlayer } from "@/lib/scan";
+import Konva from "konva";
 import { Circle } from "react-konva";
 
-export function ScanCircle({
+export function InnerScanCircle({
+  scan,
+  starId,
+  zoom,
+}: {
+  scan: Scan;
+  starId: ID;
+  zoom: number;
+}) {
+  const player = usePlayer();
+  const star = scan.stars.find((s) => s.id === starId);
+
+  if (!star || player?.id !== star?.occupier) {
+    return null;
+  }
+
+  return (
+    <Circle
+      x={star.position.x}
+      y={star.position.y}
+      radius={getScanningDistance(player)}
+      opacity={1}
+      fill={darken(player.color, -130)}
+      // strokeWidth={1 / zoom}
+      // dash={[10 / zoom, 5 / zoom]}
+      listening={false}
+    />
+  );
+}
+
+export function OuterScanCircle({
   scan,
   starId,
   zoom,
@@ -26,9 +57,10 @@ export function ScanCircle({
       radius={getScanningDistance(player)}
       opacity={1}
       stroke={player.color}
-      strokeWidth={1 / zoom}
+      strokeWidth={2 / zoom}
       dash={[10 / zoom, 5 / zoom]}
       listening={false}
+      globalCompositeOperation="source-over"
     />
   );
 }

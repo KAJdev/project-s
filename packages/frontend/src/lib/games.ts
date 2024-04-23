@@ -88,11 +88,19 @@ export const defaultGameSettings: () => GameSettings = () => ({
 });
 
 export const gameStore = create<{
-  games: Game[];
+  games: Record<ID, Game>;
   setGames: (games: Game[]) => void;
+  setGame: (game: Game) => void;
 }>((set) => ({
-  games: [],
-  setGames: (games) => set({ games }),
+  games: {},
+  setGames: (games) =>
+    set({
+      games: games.reduce((acc, game) => ({ ...acc, [game.id]: game }), {}),
+    }),
+  setGame: (game) =>
+    set((state) => ({
+      games: { ...state.games, [game.id]: game },
+    })),
 }));
 
 export async function fetchGames() {
@@ -100,30 +108,43 @@ export async function fetchGames() {
   gameStore.getState().setGames(games || []);
 }
 
+export async function fetchGame(gameId: ID) {
+  const game = await request<Game>(`/games/${gameId}`);
+  if (game) {
+    gameStore.getState().setGame(game);
+  }
+}
+
+export async function restartGame(gameId: ID) {
+  return await request<Game>(`/games/${gameId}/restart`, {
+    method: "POST",
+  });
+}
+
 export function useGames() {
   const games = gameStore((state) => state.games);
 
   useEffect(() => {
-    if (games.length === 0) {
+    if (Object.keys(games).length === 0) {
       fetchGames();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return games;
+  return Object.values(games);
 }
 
 export function useGame(gameId: ID | undefined) {
   const games = gameStore((state) => state.games);
+  const specificGame = games[gameId || ""];
 
   useEffect(() => {
-    if (games.length === 0) {
-      fetchGames();
+    if (!specificGame && gameId) {
+      fetchGame(gameId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [gameId, specificGame]);
 
-  return games.find((game) => game.id === gameId) || null;
+  return specificGame;
 }
 
 export async function createGame(name: string, settings: GameSettings) {

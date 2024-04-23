@@ -159,9 +159,9 @@ class Player(Document):
 
     def dict_not_self(self):
         d = super().model_dump()
+        d["cash"] = int(d["cash"])
         for k in ("research_queue", "research_points", "cash"):
             del d[k]
-        d["cash"] = int(d["cash"])
         return convert_dates_to_iso(d)
 
     def do_research(self, game: Game, stars: list["Star"]):

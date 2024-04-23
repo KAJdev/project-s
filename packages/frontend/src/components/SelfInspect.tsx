@@ -1,6 +1,7 @@
 import { scanStore, usePlayer, useScan } from "@/lib/scan";
-import { Inspector } from "./Inspector";
-import { useGame } from "@/lib/games";
+import { Field, Inspector } from "./Inspector";
+import { fetchGames, restartGame, useGame } from "@/lib/games";
+import { Button } from "./Theme/Button";
 
 export function SelfInspect() {
   const self = usePlayer();
@@ -28,6 +29,13 @@ export function SelfInspect() {
           </span>
         </p>
       </div>
+      {game.owner === self.user && (
+        <Field label="Admin">
+          <Button onClick={() => restartGame(game.id).then(() => fetchGames())}>
+            Restart Game
+          </Button>
+        </Field>
+      )}
     </Inspector>
   );
 }
