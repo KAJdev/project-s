@@ -3,6 +3,8 @@ import { request } from "./api";
 import { stat } from "fs";
 import { useSelf } from "./users";
 import { useGame } from "./games";
+import { mapState } from "./map";
+import { getHyperSpaceDistance } from "./players";
 
 export type Technology =
   | "scanning"
@@ -184,6 +186,35 @@ export async function updateCarrier(
   });
 
   return updatedCarrier;
+}
+
+export async function addToCarrierDestination(starId: ID) {
+  const scan = scanStore.getState().scan;
+  if (!scan) return;
+
+  const planningFor = mapState.getState().flightPlanningFor;
+  if (!planningFor) return;
+
+  const carrier = scan.carriers.find((c) => c.id === planningFor);
+  if (!carrier) return;
+
+  const lastDestination =
+    carrier.destination_queue[carrier.destination_queue.length - 1];
+  const lastPosition =
+    scan.stars.find((s) => s.id === lastDestination)?.position ??
+    carrier.position;
+  const newDestination = scan.stars.find((s) => s.id === starId)?.position!;
+  const owner = scan.players.find((p) => p.id === carrier.owner);
+  if (!owner) return;
+
+  if (distance(lastPosition, newDestination) > getHyperSpaceDistance(owner))
+    return;
+
+  const newCarrier = await updateCarrier(carrier.id, {
+    destinations: carrier.destination_queue.concat(starId),
+  });
+
+  return newCarrier;
 }
 
 export function useScan(gameId: ID | undefined) {

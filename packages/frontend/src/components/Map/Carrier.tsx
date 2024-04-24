@@ -94,6 +94,7 @@ function RotatingArcs({
       rotation={i * 90 + 30 + r}
       fill="white"
       opacity={0.5}
+      listening={false}
     />
   ));
 
@@ -137,6 +138,7 @@ export function MapCarrier({
             opacity={selectedEntities.length > 0 && !isSelected ? 0.5 : 1}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
+            listening={false}
           />
           {color && (
             <Arc
@@ -160,6 +162,7 @@ export function MapCarrier({
           onMouseLeave={() => setHovered(false)}
           fill={owner?.color || "gray"}
           opacity={selectedEntities.length > 0 && !isSelected ? 0.5 : 1}
+          listening={false}
         />
       )}
 
@@ -180,6 +183,7 @@ export function MapCarrier({
               x: carrier.position.x + carrierSize / 1.1,
               y: carrier.position.y,
               scale: { x: 1 / zoom, y: 1 / zoom },
+              listening: false,
             }}
             divProps={{
               style: {
@@ -209,6 +213,7 @@ export function MapCarrier({
               rotation={i * 90 + 30}
               fill="white"
               opacity={1}
+              listening={false}
             />
           ))}
         </>

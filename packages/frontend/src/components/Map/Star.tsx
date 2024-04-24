@@ -2,7 +2,7 @@
 import { darken, hexToHSV, hexToRgb } from "@/lib/color";
 import { useImage } from "@/lib/image";
 import { mapState } from "@/lib/map";
-import { Scan, useCarriersAround } from "@/lib/scan";
+import { Scan, addToCarrierDestination, useCarriersAround } from "@/lib/scan";
 import { Html } from "react-konva-utils";
 import { Arc, Circle, Image } from "react-konva";
 import { Rocket } from "lucide-react";
@@ -148,6 +148,7 @@ function RotatingArcs({
       rotation={i * 90 + 30 + r}
       fill="white"
       opacity={0.5}
+      listening={false}
     />
   ));
 
@@ -160,7 +161,11 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
   const star = scan.stars.find((s) => s.id === starId);
   const owner = scan.players.find((p) => p.id === star?.occupier);
   const [hovered, setHovered] = useState(false);
-  const [zoom, selectedEntities] = mapState((s) => [s.zoom, s.selected]);
+  const [zoom, selectedEntities, flightPlanningFor] = mapState((s) => [
+    s.zoom,
+    s.selected,
+    s.flightPlanningFor,
+  ]);
   const isSelected = selectedEntities.some(
     (e) => e.type === "star" && e.id === starId
   );
@@ -191,6 +196,13 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
             opacity={selectedEntities.length > 0 && !isSelected ? 0.5 : 1}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
+            listening={!!flightPlanningFor}
+            onMouseUp={(e) => {
+              console.log(e, flightPlanningFor);
+              if (flightPlanningFor) {
+                addToCarrierDestination(starId);
+              }
+            }}
           />
           {color && (
             <Arc
@@ -214,6 +226,12 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
           onMouseLeave={() => setHovered(false)}
           fill={owner?.color || "gray"}
           opacity={selectedEntities.length > 0 && !isSelected ? 0.5 : 1}
+          listening={!!flightPlanningFor}
+          onMouseUp={(e) => {
+            if (flightPlanningFor) {
+              addToCarrierDestination(starId);
+            }
+          }}
         />
       )}
 
@@ -233,6 +251,7 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
             x: star.position.x + starSize / 1.1,
             y: star.position.y,
             scale: { x: 1 / zoom, y: 1 / zoom },
+            listening: false,
           }}
           divProps={{
             style: {
@@ -271,6 +290,7 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
               rotation={i * 90 + 30}
               fill="white"
               opacity={1}
+              listening={false}
             />
           ))}
         </>

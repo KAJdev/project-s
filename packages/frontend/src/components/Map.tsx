@@ -129,6 +129,7 @@ export function Map({ game }: { game: Game }) {
             );
           });
 
+        mapState.getState().setFlightPlanningFor(null);
         mapState.getState().setSelected(
           entities
             // only grab first of each type
