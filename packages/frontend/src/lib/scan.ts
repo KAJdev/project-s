@@ -168,6 +168,16 @@ export async function updateCarrier(
   const carrier = scan.carriers.find((c) => c.id === carrierId);
   if (!carrier) return;
 
+  // speculative update
+  const saveIncaseOfError = { ...carrier };
+  carrier.name = name ?? carrier.name;
+  carrier.destination_queue = destinations ?? carrier.destination_queue;
+
+  scanStore.getState().setScan({
+    ...scan,
+    carriers: scan.carriers.map((c) => (c.id === carrierId ? carrier : c)),
+  });
+
   const updatedCarrier = await request<Carrier>(
     `/games/${scan.game}/carriers/${carrierId}`,
     {
@@ -176,7 +186,16 @@ export async function updateCarrier(
     }
   );
 
-  if (!updatedCarrier) return;
+  if (!updatedCarrier) {
+    // well, fuck
+    scanStore.getState().setScan({
+      ...scan,
+      carriers: scan.carriers.map((c) =>
+        c.id === carrierId ? saveIncaseOfError : c
+      ),
+    });
+    return;
+  }
 
   scanStore.getState().setScan({
     ...scan,

@@ -4,7 +4,7 @@ import random
 from modules.db import Position, distance
 
 
-MIN_STAR_DISTANCE = 0.5
+MIN_STAR_DISTANCE = 0.8
 GALAXY_SIZE = 30
 MAX_ITERATIONS = 10000
 
