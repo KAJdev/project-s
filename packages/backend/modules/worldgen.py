@@ -1,11 +1,11 @@
 import math
 import random
 
-from modules.db import Position
+from modules.db import Position, distance
 
 
 MIN_STAR_DISTANCE = 0.5
-GALAXY_SIZE = 100
+GALAXY_SIZE = 30
 MAX_ITERATIONS = 10000
 
 GREEK_LETTERS = [
@@ -126,7 +126,7 @@ CONSTELLATIONS = [
     "Vulpecula",
 ]
 
-NAME_PARTS = {
+STAR_NAME_PARTS = {
     "prefix": [
         "A",
         "B",
@@ -215,9 +215,85 @@ NAME_PARTS = {
     ],
 }
 
-
-def distance(a, b):
-    return math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
+CARRIER_NAME_PARTS = {
+    "prefix": [
+        "BIS",
+        "SCF",
+        "GAL",
+        "FED",
+        "UNI",
+        "ALL",
+        "COR",
+        "SOL",
+        "SUN",
+        "COS",
+        "AST",
+        "LUN",
+        "MIL",
+        "DE",
+        "RE",
+        "IM",
+        "EX",
+        "INT",
+    ],
+    "middle": [
+        # greek letters
+        "Alpha",
+        "Beta",
+        "Gamma",
+        "Delta",
+        "Epsilon",
+        "Zeta",
+        "Eta",
+        "Theta",
+        "Iota",
+        "Kappa",
+        "Lambda",
+        "Mu",
+        "Nu",
+        "Xi",
+        "Omicron",
+        "Pi",
+        "Rho",
+        "Sigma",
+        "Tau",
+        "Upsilon",
+        "Phi",
+        "Chi",
+        "Psi",
+        "Omega",
+        # gods
+        "Zeus",
+        "Hera",
+        "Poseidon",
+        "Demeter",
+        "Athena",
+        "Apollo",
+        "Artemis",
+        "Ares",
+        "Aphrodite",
+        "Hermes",
+        "Hephaestus",
+        "Hestia",
+        "Dionysus",
+        "Hades",
+        "Persephone",
+        "Heracles",
+        # planets
+        "Mercury",
+        "Venus",
+        "Earth",
+        "Mars",
+        "Jupiter",
+        "Saturn",
+        "Uranus",
+        "Neptune",
+        "Pluto",
+        "Ceres",
+        "Eris",
+        "Haumea",
+    ],
+}
 
 
 def generate_star_name() -> str:
@@ -233,7 +309,17 @@ def generate_star_name() -> str:
         return f"NGC {random.randint(1, 10000)} {random.choice(CONSTELLATIONS)}"
 
     if name_type == "proper":
-        return f"{random.choice(NAME_PARTS['prefix'])}{''.join(random.choices(NAME_PARTS['middle'], k=2))}{random.choice(NAME_PARTS['suffix'])}"
+        return f"{random.choice(STAR_NAME_PARTS['prefix'])}{''.join(random.choices(STAR_NAME_PARTS['middle'], k=2))}{random.choice(STAR_NAME_PARTS['suffix'])}"
+
+
+def generate_carrier_name(seed: int) -> str:
+    # pick a prefix based on the seed (dont use random) (the seed will probably be a color hex code or something)
+    prefix = CARRIER_NAME_PARTS["prefix"][seed % len(CARRIER_NAME_PARTS["prefix"])]
+
+    # pick a random middle
+    middle = random.choice([*CARRIER_NAME_PARTS["middle"], *CONSTELLATIONS])
+
+    return f"{prefix} {middle}"
 
 
 def generate_star_positions(

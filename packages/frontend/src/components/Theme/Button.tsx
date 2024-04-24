@@ -72,7 +72,10 @@ export function Button({
       }}
     >
       {loading ? (
-        <Loader2 className="text-white opacity-80 animate-spin" size={14} />
+        <Loader2
+          className="text-white opacity-80 animate-spin shrink-0"
+          size={14}
+        />
       ) : (
         icon
       )}

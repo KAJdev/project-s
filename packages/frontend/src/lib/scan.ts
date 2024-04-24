@@ -63,6 +63,10 @@ export type Scan = {
   players: Player[];
 };
 
+function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
+  return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
+}
+
 export const scanStore = create<{
   scan: Scan | null;
   setScan: (scan: Scan | null) => void;
@@ -74,6 +78,112 @@ export const scanStore = create<{
 export async function fetchScan(gameId: ID) {
   const scan = await request<Scan>(`/games/${gameId}/scan`);
   scanStore.getState().setScan(scan || null);
+}
+
+export async function buildCarrier(
+  starId: ID,
+  ships: number = 1,
+  name?: string
+) {
+  const scan = scanStore.getState().scan;
+  if (!scan) return;
+  const newcarrier = await request<Carrier>(`/games/${scan.game}/carriers`, {
+    method: "POST",
+    body: { star_id: starId, ships, name },
+  });
+
+  if (!newcarrier) return;
+
+  scanStore.getState().setScan({
+    ...scan,
+    carriers: [...scan.carriers, newcarrier],
+    // subtract ships from star
+    stars: scan.stars.map((s) =>
+      s.id === starId && exists(s.ships) ? { ...s, ships: s.ships! - ships } : s
+    ),
+    // subtract $25
+    players: scan.players.map((p) =>
+      p.id === newcarrier.owner && exists(p.cash)
+        ? { ...p, cash: p.cash! - 25 }
+        : p
+    ),
+  });
+
+  return newcarrier;
+}
+
+export async function transferShips(
+  fromEntity: ID,
+  toEntity: ID,
+  amount: number
+) {
+  const scan = scanStore.getState().scan;
+  if (!scan) return;
+
+  const resp = await request<{ success: boolean }>(
+    `/games/${scan.game}/transfer`,
+    {
+      method: "PATCH",
+      body: { from_id: fromEntity, to_id: toEntity, amount },
+    }
+  );
+
+  if (!resp) return;
+
+  if (resp.success) {
+    scanStore.getState().setScan({
+      ...scan,
+      carriers: scan.carriers.map((c) =>
+        [fromEntity, toEntity].includes(c.id)
+          ? { ...c, ships: c.ships + (c.id === fromEntity ? -amount : amount) }
+          : c
+      ),
+      stars: scan.stars.map((s) =>
+        [fromEntity, toEntity].includes(s.id) && exists(s.ships)
+          ? {
+              ...s,
+              ships: s.ships! + (s.id === fromEntity ? -amount : amount),
+            }
+          : s
+      ),
+    });
+  }
+}
+
+export async function updateCarrier(
+  carrierId: ID,
+  {
+    name,
+    destinations,
+  }: {
+    name?: string;
+    destinations?: ID[];
+  }
+) {
+  const scan = scanStore.getState().scan;
+  if (!scan) return;
+
+  const carrier = scan.carriers.find((c) => c.id === carrierId);
+  if (!carrier) return;
+
+  const updatedCarrier = await request<Carrier>(
+    `/games/${scan.game}/carriers/${carrierId}`,
+    {
+      method: "PATCH",
+      body: { name, destinations },
+    }
+  );
+
+  if (!updatedCarrier) return;
+
+  scanStore.getState().setScan({
+    ...scan,
+    carriers: scan.carriers.map((c) =>
+      c.id === carrierId ? updatedCarrier : c
+    ),
+  });
+
+  return updatedCarrier;
 }
 
 export function useScan(gameId: ID | undefined) {
@@ -93,14 +203,48 @@ export function usePlayer() {
   return scan?.players.find((p) => p.user === user?.id);
 }
 
-export function useSpecificPlayer(playerId: ID | undefined) {
+export function useSpecificPlayer(playerId: ID | undefined | null) {
   const scan = scanStore((state) => state.scan);
   return scan?.players.find((p) => p.id === playerId);
+}
+
+export function usePlayers(ids: ID[]) {
+  const scan = scanStore((state) => state.scan);
+  return scan?.players.filter((p) => ids.includes(p.id)) || ([] as Player[]);
 }
 
 export function useStar(starId: ID) {
   const scan = scanStore((state) => state.scan);
   return scan?.stars.find((s) => s.id === starId);
+}
+
+export function useStars(ids: ID[]) {
+  const scan = scanStore((state) => state.scan);
+  return ids
+    .map((id) => scan?.stars.find((s) => s.id === id))
+    .filter(exists) as Star[];
+}
+
+export function useCarrier(carrierId: ID) {
+  const scan = scanStore((state) => state.scan);
+  return scan?.carriers.find((c) => c.id === carrierId);
+}
+
+export function useCarriers(ids: ID[]) {
+  const scan = scanStore((state) => state.scan);
+  return scan?.carriers.filter((c) => ids.includes(c.id)) || ([] as Carrier[]);
+}
+
+export function useCarriersAround(
+  position: { x: number; y: number } | undefined,
+  d: number = 0.2
+) {
+  const scan = scanStore((state) => state.scan);
+  if (!position) return [];
+  return (
+    scan?.carriers.filter((c) => distance(c.position, position) <= d) ||
+    ([] as Carrier[])
+  );
 }
 
 export function useStarCosts(starId: ID | undefined): {
@@ -132,4 +276,12 @@ export function useStarCosts(starId: ID | undefined): {
   const warp_gate = (50 * 2 * 100) / (resources + 5 * terraforming_level);
 
   return { economy, industry, science, warp_gate };
+}
+
+export function getETA(
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+  speed: number
+) {
+  return distance(from, to) / speed;
 }

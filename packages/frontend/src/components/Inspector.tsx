@@ -12,7 +12,7 @@ export function Inspector({
   nothingMessage?: string;
 } & StyleableWithChildren) {
   return (
-    <div className="max-w-[35rem] pointer-events-auto w-full flex flex-col font-mono h-fit border border-white/20 bg-[#0f1722]/70 backdrop-blur-md">
+    <div className="max-w-[35rem] pointer-events-auto w-full flex flex-col h-fit border border-white/20 bg-[#0f1722]/70 backdrop-blur-md">
       {title && (
         <div className="border-b border-white/20 w-full p-4">
           {superTitle && <p className="text-xs opacity-50">{superTitle}</p>}

@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { Sparkle } from "lucide-react";
 
 const COLORS = ["#2056bc", "#bba7be", "#c0aa13", "#c25b00", "#ffa34c"];
@@ -28,7 +29,9 @@ export function Star({
         top: `${loc.y}vh`,
       }}
     >
-      <Sparkle
+      <img
+        src="/star.png"
+        alt="star"
         style={{
           opacity:
             opacity ??
@@ -36,12 +39,15 @@ export function Star({
               1 - Math.max(0.1, 1 - centerRelativity / 50) * 1.5,
               0.6
             )}`,
+          width: `${
+            (centerAdapt ? 1 - Math.max(0.1, 1 - centerRelativity / 50) : 1) *
+            24
+          }px`,
+          height: `${
+            (centerAdapt ? 1 - Math.max(0.1, 1 - centerRelativity / 50) : 1) *
+            24
+          }px`,
         }}
-        size={
-          (centerAdapt ? 1 - Math.max(0.1, 1 - centerRelativity / 50) : 1) * 24
-        }
-        color={loc.color}
-        fill={loc.isFilled ? "currentColor" : undefined}
       />
     </div>
   );

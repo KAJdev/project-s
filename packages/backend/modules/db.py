@@ -1,5 +1,6 @@
 from datetime import datetime, UTC
 from enum import Enum
+import math
 from uuid import UUID, uuid4
 from dotenv import load_dotenv
 from os import getenv
@@ -23,6 +24,14 @@ def convert_dates_to_iso(d):
         if isinstance(v, datetime):
             d[k] = v.isoformat() + "Z"
     return d
+
+
+def distance(a, b):
+    if isinstance(a, Position):
+        a = (a.x, a.y)
+    if isinstance(b, Position):
+        b = (b.x, b.y)
+    return math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
 
 
 class User(Document):
@@ -151,6 +160,9 @@ class Player(Document):
 
     def get_scan_distance(self) -> int:
         return 2 + self.research_levels.scanning
+
+    def get_hyperspace_distance(self) -> int:
+        return 3 + self.research_levels.hyperspace
 
     def dict(self):
         d = super().model_dump()
@@ -306,13 +318,19 @@ class Carrier(Document):
         d = super().model_dump()
         return d
 
+    def dict_not_self(self):
+        d = super().model_dump()
+        if d["destination_queue"]:
+            d["destination_queue"] = [d["destination_queue"][0]]
+        return d
+
     def move(self, game: Game, stars: list[Star]):
         if not self.destination_queue:
             return
 
         destination = next(s for s in stars if s.id == self.destination_queue[0])
 
-        distance = distance(
+        distance_to_move = distance(
             (self.position.x, self.position.y),
             (destination.position.x, destination.position.y),
         )
@@ -323,15 +341,15 @@ class Carrier(Document):
 
         speed = speed / 60  # because we are running this every minute
 
-        if distance <= speed:
+        if distance_to_move <= speed:
             self.position = destination.position
             self.destination_queue.pop(0)
         else:
             self.position.x += (
-                (destination.position.x - self.position.x) / distance * speed
+                (destination.position.x - self.position.x) / distance_to_move * speed
             )
             self.position.y += (
-                (destination.position.y - self.position.y) / distance * speed
+                (destination.position.y - self.position.y) / distance_to_move * speed
             )
 
     class Settings:

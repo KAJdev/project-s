@@ -2,8 +2,8 @@ import { ChevronDown } from "lucide-react";
 import { Inter } from "next/font/google";
 import { ReactNode } from "react";
 import { Popover } from "react-tiny-popover";
-
-const inter = Inter({ subsets: ["latin"] });
+import { font } from "@/pages/_app";
+import { useMeasure } from "react-use";
 
 export function Select({
   className,
@@ -14,6 +14,8 @@ export function Select({
   value,
   options,
   placeholder,
+  popoverClassName,
+  fullWidth,
 }: Styleable & {
   icon?: ReactNode;
   variant?:
@@ -26,33 +28,57 @@ export function Select({
   disabled?: boolean;
   onChange?: (value: any) => void;
   value?: string;
-  options: { label: string; value: string; icon?: ReactNode }[];
+  options: {
+    label: ReactNode;
+    value: string;
+    icon?: ReactNode;
+    disabled: boolean;
+  }[];
   placeholder?: string;
+  popoverClassName?: string;
+  fullWidth?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const current = options?.find((option) => option.value === value);
-  return (
+
+  const [ref, { width }] = useMeasure<HTMLSelectElement>();
+
+  const content = (
     <Popover
       isOpen={open}
       onClickOutside={() => setOpen(false)}
       positions={["bottom"]}
       padding={4}
+      containerStyle={{
+        zIndex: "999999",
+      }}
       boundaryInset={16}
       content={
         <div
           className={classes(
-            "primary-panel-solid-interactive active p-1 gap-0.5 w-[12rem] flex flex-col overflow-y-auto max-h-[30rem] min-h-0 drop-shadow-xl",
-            inter.className
+            "primary-panel-solid active p-1 gap-0.5 flex flex-col overflow-y-auto max-h-[30rem] min-h-0 drop-shadow-xl",
+            fullWidth ? "w-full" : "w-[12rem]",
+            font.className,
+            popoverClassName
           )}
+          style={
+            fullWidth
+              ? {
+                  width: width,
+                }
+              : undefined
+          }
         >
           {options.map((option) => (
             <div
               className={classes(
                 "transparent-panel-interactive flex items-center gap-2 px-1.5 py-1",
-                option.value === value && "active"
+                option.value === value && "active",
+                option.disabled && "opacity-50 pointer-events-none"
               )}
               key={option.value}
               onClick={(e) => {
+                if (option.disabled) return;
                 onChange?.(option.value);
                 setOpen(false);
               }}
@@ -67,6 +93,7 @@ export function Select({
       }
     >
       <div
+        // ref={ref as any}
         className={classes(
           "flex gap-2 duration-100 px-2 py-[0.4rem] text-sm items-center select-none cursor-default w-[12rem]",
           variant === "primary" && "primary-panel-interactive",
@@ -77,6 +104,7 @@ export function Select({
           variant === "vibrant" && "vibrant-panel-interactive",
           open && "active",
           disabled && "opacity-50 pointer-events-none",
+          fullWidth && "w-full",
           className
         )}
         onClick={() => {
@@ -98,4 +126,14 @@ export function Select({
       </div>
     </Popover>
   );
+
+  if (fullWidth) {
+    return (
+      <div ref={ref as any} className="w-full">
+        {content}
+      </div>
+    );
+  }
+
+  return content;
 }

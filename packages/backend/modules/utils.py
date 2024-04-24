@@ -1,7 +1,9 @@
 og_print = print
 import inspect
+import math
 from os import getenv
 from uuid import uuid4
+import aiohttp
 from sanic import Request
 import base64
 from datetime import datetime
@@ -75,3 +77,31 @@ def from_wh(msg: str) -> tuple[GatewayOpCode, dict]:
         return GatewayOpCode.INVALID, {}
 
     return op, msg.get("d", {})
+
+
+async def gpt(
+    sys_prompt: str,
+    msgs: list[tuple[str, str]],
+    temperature: float = 1,
+    max_tokens: int = 1024,
+) -> str:
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {getenv('OPENAI_TOKEN')}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "gpt-4",
+                "messages": [
+                    {"role": "system", "content": sys_prompt},
+                    *[{"role": m[0], "content": m[1]} for m in msgs],
+                ],
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            },
+        ) as resp:
+            data = await resp.json()
+            completion = data["choices"][0]["message"]["content"]
+            return completion

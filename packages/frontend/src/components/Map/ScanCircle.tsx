@@ -1,18 +1,10 @@
 import { darken } from "@/lib/color";
-import { getHyperSpaceDistance, getScanningDistance } from "@/lib/players";
+import { useZoom } from "@/lib/map";
+import { getScanningDistance } from "@/lib/players";
 import { Scan, usePlayer } from "@/lib/scan";
-import Konva from "konva";
 import { Circle } from "react-konva";
 
-export function InnerScanCircle({
-  scan,
-  starId,
-  zoom,
-}: {
-  scan: Scan;
-  starId: ID;
-  zoom: number;
-}) {
+export function InnerScanCircle({ scan, starId }: { scan: Scan; starId: ID }) {
   const player = usePlayer();
   const star = scan.stars.find((s) => s.id === starId);
 
@@ -34,17 +26,10 @@ export function InnerScanCircle({
   );
 }
 
-export function OuterScanCircle({
-  scan,
-  starId,
-  zoom,
-}: {
-  scan: Scan;
-  starId: ID;
-  zoom: number;
-}) {
+export function OuterScanCircle({ scan, starId }: { scan: Scan; starId: ID }) {
   const player = usePlayer();
   const star = scan.stars.find((s) => s.id === starId);
+  const zoom = useZoom();
 
   if (!star || player?.id !== star?.occupier) {
     return null;

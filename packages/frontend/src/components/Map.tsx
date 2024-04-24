@@ -1,5 +1,5 @@
 import { Game } from "@/lib/games";
-import { useScan } from "@/lib/scan";
+import { Scan, useScan } from "@/lib/scan";
 import { KonvaNodeComponent, Layer, Stage, StageProps } from "react-konva";
 import { useWindowSize } from "react-use";
 import { MapStar } from "./Map/Star";
@@ -7,9 +7,55 @@ import { mapState } from "@/lib/map";
 import { InnerScanCircle, OuterScanCircle } from "./Map/ScanCircle";
 import { UseKeyOptions } from "react-use/lib/useKey";
 import { HyperspaceCircle } from "./Map/HyperspaceCircle";
+import { MapCarrier } from "./Map/Carrier";
 
 function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
   return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
+}
+
+function Stars({ scan }: { scan: Scan | null }) {
+  return (
+    <>
+      <Layer>
+        {scan?.stars.map((star) => (
+          <HyperspaceCircle key={star.id} scan={scan} starId={star.id} />
+        ))}
+      </Layer>
+      <Layer>
+        {scan?.stars.map((star) => (
+          <OuterScanCircle key={star.id} scan={scan} starId={star.id} />
+        ))}
+        {scan?.stars.map((star) => (
+          <InnerScanCircle key={star.id} scan={scan} starId={star.id} />
+        ))}
+      </Layer>
+      <Layer>
+        {scan?.stars.map((star) => (
+          <MapStar key={star.id} scan={scan} starId={star.id} />
+        ))}
+      </Layer>
+    </>
+  );
+}
+
+function Carriers({ scan }: { scan: Scan | null }) {
+  return (
+    <Layer>
+      {scan?.carriers.map((carrier) => (
+        <MapCarrier key={carrier.id} scan={scan} carrierId={carrier.id} />
+      ))}
+    </Layer>
+  );
+}
+
+function Entities({ gameId }: { gameId: ID }) {
+  const scan = useScan(gameId);
+  return (
+    <>
+      <Stars scan={scan} />
+      <Carriers scan={scan} />
+    </>
+  );
 }
 
 export function Map({ game }: { game: Game }) {
@@ -50,7 +96,82 @@ export function Map({ game }: { game: Game }) {
 
     window.addEventListener("wheel", handleWheel);
     return () => window.removeEventListener("wheel", handleWheel);
-  }, [camera.x, camera.y, height, width, zoom]);
+  }, [height, width, zoom]);
+
+  const onMouseUp = useCallback(
+    (e: any) => {
+      const pointer = e.target.getStage()!.getPointerPosition()!;
+      if (panning) {
+        mapState.getState().setPanning(false);
+      }
+
+      if (
+        e.evt.button === 0 &&
+        distance(pointer, lastPointerDownPosition.current) < 2
+      ) {
+        if (!scan) return;
+
+        const transformedPointer = {
+          x: (pointer.x - camera.x) / zoom,
+          y: (pointer.y - camera.y) / zoom,
+        };
+
+        // find all entities within a distance of like 100 pixels and select them
+        const entities = [
+          ...(scan.stars.map((s) => ({ ...s, type: "star" })) as any),
+          ...(scan.carriers.map((c) => ({ ...c, type: "carrier" })) as any),
+        ]
+          .filter((e) => distance(e.position, transformedPointer) * zoom < 20)
+          .sort((a, b) => {
+            return (
+              distance(a.position, transformedPointer) -
+              distance(b.position, transformedPointer)
+            );
+          });
+
+        mapState.getState().setSelected(
+          entities
+            // only grab first of each type
+            .filter(
+              (e, i, arr) =>
+                e.type === "carrier" ||
+                arr.findIndex((a) => a.type === e.type) === i
+            )
+            .map((e) => ({
+              type: e.type,
+              id: e.id,
+            }))
+        );
+      }
+    },
+    [camera.x, camera.y, panning, scan, zoom]
+  );
+
+  const onMouseMove = useCallback(
+    (e: any) => {
+      if (mapState.getState().panning) {
+        mapState.getState().setCamera({
+          x: camera.x + e.evt.movementX,
+          y: camera.y + e.evt.movementY,
+        });
+      }
+    },
+    [camera.x, camera.y]
+  );
+
+  const onMouseDown = useCallback((e: any) => {
+    if (e.evt.button === 0) {
+      const pointer = e.target.getStage()!.getPointerPosition()!;
+      lastPointerDownPosition.current = pointer;
+      mapState.getState().setPanning(true);
+    }
+  }, []);
+
+  const onMouseLeave = useCallback((e: any) => {
+    if (e.evt.button === 0) {
+      mapState.getState().setPanning(false);
+    }
+  }, []);
 
   return (
     <div className="w-screen h-screen overflow-hidden bg-[#081118]">
@@ -61,75 +182,12 @@ export function Map({ game }: { game: Game }) {
         scale={{ x: zoom, y: zoom }}
         x={camera.x}
         y={camera.y}
-        onMouseUp={(e) => {
-          const pointer = e.target.getStage()!.getPointerPosition()!;
-          if (
-            e.evt.button === 0 &&
-            distance(pointer, lastPointerDownPosition.current) < 2
-          ) {
-            mapState.getState().setSelected(null);
-          }
-          if (panning) {
-            mapState.getState().setPanning(false);
-          }
-        }}
-        onTap={(e) => {
-          mapState.getState().setSelected(null);
-        }}
-        onMouseMove={(e) => {
-          if (mapState.getState().panning) {
-            mapState.getState().setCamera({
-              x: camera.x + e.evt.movementX,
-              y: camera.y + e.evt.movementY,
-            });
-          }
-        }}
-        onMouseDown={(e) => {
-          if (e.evt.button === 0) {
-            const pointer = e.target.getStage()!.getPointerPosition()!;
-            lastPointerDownPosition.current = pointer;
-            mapState.getState().setPanning(true);
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (e.evt.button === 0) {
-            mapState.getState().setPanning(false);
-          }
-        }}
+        onMouseUp={onMouseUp}
+        onMouseMove={onMouseMove}
+        onMouseDown={onMouseDown}
+        onMouseLeave={onMouseLeave}
       >
-        <Layer>
-          {scan?.stars.map((star) => (
-            <HyperspaceCircle
-              key={star.id}
-              scan={scan}
-              starId={star.id}
-              zoom={zoom}
-            />
-          ))}
-        </Layer>
-        <Layer>
-          {scan?.stars.map((star) => (
-            <OuterScanCircle
-              key={star.id}
-              scan={scan}
-              starId={star.id}
-              zoom={zoom}
-            />
-          ))}
-          {scan?.stars.map((star) => (
-            <InnerScanCircle
-              key={star.id}
-              scan={scan}
-              starId={star.id}
-              zoom={zoom}
-            />
-          ))}
-        </Layer>
-        <Layer>
-          {scan?.stars.map((star) => (
-            <MapStar key={star.id} scan={scan} starId={star.id} />
-          ))}
-        </Layer>
+        <Entities gameId={game.id} />
       </Stage>
     </div>
   );

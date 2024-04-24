@@ -2,7 +2,7 @@
 import { darken, hexToHSV, hexToRgb } from "@/lib/color";
 import { useImage } from "@/lib/image";
 import { mapState } from "@/lib/map";
-import { Scan, useCarriersAround } from "@/lib/scan";
+import { Scan } from "@/lib/scan";
 import { Html } from "react-konva-utils";
 import { Arc, Circle, Image } from "react-konva";
 import { Rocket } from "lucide-react";
@@ -11,53 +11,13 @@ function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
 }
 
-function pointWithinRect(
-  x: number,
-  y: number,
-  rect: { x: number; y: number; width: number; height: number }
-) {
-  return (
-    x >= rect.x &&
-    x <= rect.x + rect.width &&
-    y >= rect.y &&
-    y <= rect.y + rect.height
-  );
-}
-
-function starInViewport(
-  star: { position: { x: number; y: number } },
-  viewport: {
-    x: number;
-    y: number;
-    zoom: number;
-    width: number;
-    height: number;
-  }
-) {
-  const { x, y } = star.position;
-  const { zoom, width, height } = viewport;
-
-  return pointWithinRect(x, y, {
-    x: viewport.x,
-    y: viewport.y,
-    width: width / zoom,
-    height: height / zoom,
-  });
-}
-
-function StarName({
+function CarrierName({
   name,
   color,
-  resources,
   ships,
 }: {
   name: string;
   color: string | null;
-  resources: {
-    economy: number;
-    industry: number;
-    science: number;
-  } | null;
   ships: number | null;
 }) {
   const ref = React.useRef(null);
@@ -96,20 +56,6 @@ function StarName({
           {ships}
         </p>
       )}
-
-      {/* {resources && (
-        <div
-          className="flex gap-5 px-2"
-          style={{
-            borderColor: color,
-            fontSize: 12,
-          }}
-        >
-          <p>{resources.economy}</p>
-          <p>{resources.industry}</p>
-          <p>{resources.science}</p>
-        </div>
-      )} */}
     </div>
   );
 }
@@ -154,26 +100,27 @@ function RotatingArcs({
   return arcs;
 }
 
-export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
-  const img = useImage("/star.png");
-  const imgRef = React.useRef(null);
-  const star = scan.stars.find((s) => s.id === starId);
-  const owner = scan.players.find((p) => p.id === star?.occupier);
+export function MapCarrier({
+  scan,
+  carrierId,
+}: {
+  scan: Scan;
+  carrierId: string;
+}) {
+  const img = useImage("/carrier.png");
+  const carrier = scan.carriers.find((c) => c.id === carrierId);
+  const owner = scan.players.find((p) => p.id === carrier?.owner);
   const [hovered, setHovered] = useState(false);
   const [zoom, selectedEntities] = mapState((s) => [s.zoom, s.selected]);
   const isSelected = selectedEntities.some(
-    (e) => e.type === "star" && e.id === starId
+    (e) => e.type === "carrier" && e.id === carrierId
   );
 
-  const carriers = useCarriersAround(star?.position);
-  const totalShips =
-    (star?.ships ?? 0) + carriers.reduce((acc, c) => acc + c.ships, 0);
-
-  const starSize = Math.max(Math.min(0.5, lerp(30, 80, 0 / 50) / zoom), 0.1);
+  const carrierSize = Math.max(Math.min(1, lerp(30, 80, 0 / 50) / zoom), 0.1);
 
   const color = owner?.color || null;
 
-  if (!star) {
+  if (!carrier) {
     return null;
   }
 
@@ -183,21 +130,20 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
         <>
           <Image
             image={img}
-            ref={imgRef}
-            x={star.position.x - starSize / 2}
-            y={star.position.y - starSize / 2}
-            width={starSize}
-            height={starSize}
+            x={carrier.position.x - carrierSize / 2}
+            y={carrier.position.y - carrierSize / 2}
+            width={carrierSize}
+            height={carrierSize}
             opacity={selectedEntities.length > 0 && !isSelected ? 0.5 : 1}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
           />
           {color && (
             <Arc
-              x={star.position.x}
-              y={star.position.y}
-              innerRadius={starSize / 2}
-              outerRadius={starSize / 1.6}
+              x={carrier.position.x}
+              y={carrier.position.y}
+              innerRadius={carrierSize / 2}
+              outerRadius={carrierSize / 1.6}
               angle={360}
               fill={color}
               opacity={0.5}
@@ -207,9 +153,9 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
         </>
       ) : (
         <Circle
-          x={star.position.x}
-          y={star.position.y}
-          radius={starSize / 2}
+          x={carrier.position.x}
+          y={carrier.position.y}
+          radius={carrierSize / 2}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           fill={owner?.color || "gray"}
@@ -217,54 +163,46 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
         />
       )}
 
-      {(hovered || isSelected) && (
+      {(hovered || isSelected) && carrier.destination_queue.length > 0 && (
         <RotatingArcs
-          x={star.position.x}
-          y={star.position.y}
-          starSize={starSize}
+          x={carrier.position.x}
+          y={carrier.position.y}
+          starSize={carrierSize}
           zoom={zoom}
           speed={1}
         />
       )}
 
-      {(hovered || isSelected || zoom > 50) && (
-        <Html
-          groupProps={{
-            x: star.position.x + starSize / 1.1,
-            y: star.position.y,
-            scale: { x: 1 / zoom, y: 1 / zoom },
-          }}
-          divProps={{
-            style: {
-              pointerEvents: "none",
-              zIndex: isSelected || hovered ? 100 : 0,
-            },
-          }}
-        >
-          <StarName
-            name={star.name}
-            color={color}
-            ships={exists(star.ships) ? totalShips : null}
-            resources={
-              star.resources
-                ? {
-                    economy: star.economy!,
-                    industry: star.industry!,
-                    science: star.science!,
-                  }
-                : null
-            }
-          />
-        </Html>
-      )}
+      {(hovered || isSelected || zoom > 20) &&
+        carrier.destination_queue.length > 0 && (
+          <Html
+            groupProps={{
+              x: carrier.position.x + carrierSize / 1.1,
+              y: carrier.position.y,
+              scale: { x: 1 / zoom, y: 1 / zoom },
+            }}
+            divProps={{
+              style: {
+                pointerEvents: "none",
+                zIndex: isSelected || hovered ? 100 : 0,
+              },
+            }}
+          >
+            <CarrierName
+              name={carrier.name}
+              color={color}
+              ships={carrier.ships ?? null}
+            />
+          </Html>
+        )}
 
       {isSelected && (
         <>
           {Array.from({ length: 4 }, (_, i) => (
             <Arc
               key={i}
-              x={star.position.x}
-              y={star.position.y}
+              x={carrier.position.x}
+              y={carrier.position.y}
               innerRadius={30 / zoom}
               outerRadius={30 / zoom / 1.1}
               angle={30}

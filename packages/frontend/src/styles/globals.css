@@ -7,16 +7,16 @@
 }
 
 body {
-  background: rgb(15, 15, 15);
+  background: #081118;
   @apply text-white;
 }
 
 .primary-panel {
-  @apply bg-white/[3%] ring-[1px] ring-white/[6%] ring-inset;
+  @apply bg-[#0d151f] ring-[1px] ring-white/[6%] ring-inset;
 }
 
 .primary-panel-solid {
-  @apply bg-[#151515] ring-[1px] ring-white/[6%] ring-inset;
+  @apply bg-[#0d151f] ring-[1px] ring-white/[6%] ring-inset;
 }
 
 .primary-panel-interactive {

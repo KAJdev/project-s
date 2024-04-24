@@ -1,8 +1,6 @@
 import { motion } from "framer-motion";
-import { Inter } from "next/font/google";
 import { Popover } from "react-tiny-popover";
-
-const inter = Inter({ subsets: ["latin"] });
+import { font } from "@/pages/_app";
 
 export function Tooltip({
   children,
@@ -45,9 +43,9 @@ export function Tooltip({
             duration: 0.1,
           }}
           className={classes(
-            "primary-panel-solid-interactive active text-sm",
+            "primary-panel-solid active text-sm",
             typeof content === "string" ? "px-2 py-1" : "px-2 py-2",
-            inter.className,
+            font.className,
             className
           )}
         >
@@ -61,6 +59,9 @@ export function Tooltip({
       padding={4}
       boundaryInset={16}
       onClickOutside={() => setIsOpen(false)}
+      containerStyle={{
+        zIndex: "999999",
+      }}
     >
       <span
         onMouseEnter={() => setIsOpen(true)}

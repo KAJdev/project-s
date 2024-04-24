@@ -2,9 +2,8 @@ import asyncio
 from datetime import datetime, UTC
 from sanic import Blueprint, Request, json, exceptions
 from sanic_ext import openapi
-from modules.db import Carrier, GameSettings, Message, Player, Game, Star, User
+from modules.db import Carrier, GameSettings, Message, Player, Game, Star, distance
 from modules.auth import authorized
-from modules.worldgen import distance
 from modules import gateway
 import aiocron
 from typing import TypedDict
@@ -71,7 +70,7 @@ async def scan_game(
 
     # filter things
     scan["carriers"] = [
-        c.dict()
+        (c.dict() if c.owner == current_player.id else c.dict_not_self())
         for c in carriers
         if (
             any(

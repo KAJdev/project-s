@@ -3,11 +3,13 @@ import random
 from beanie import WriteRules
 from sanic import Blueprint, Request, json, exceptions
 from sanic_ext import openapi
-from modules.db import GameSettings, Message, Player, Game, Star, User
+from modules.db import Carrier, GameSettings, Message, Player, Game, Star, distance
 from modules.auth import authorized
 from modules import gateway
-from modules.worldgen import distance, generate_star_name, generate_star_positions
-from beanie.operators import Or, And, In
+from modules.worldgen import generate_star_name, generate_star_positions
+from beanie.operators import Or
+
+from blueprints.scan import on_scan
 
 MSG_PAGE_SIZE = 100
 
@@ -227,10 +229,12 @@ async def restart_game(request: Request, game_id: str):
     game.winner = None
     await Star.find(Star.game == game.id).delete_many()
     await Message.find(Message.game == game.id).delete_many()
+    await Carrier.find(Carrier.game == game.id).delete_many()
     await Player.find(Player.game == game.id).update_many(
         {"$set": {"cash": game.settings.starting_cash}}
     )
     await game.save()
     await generate_map(game)
+    on_scan(game)
 
     return json(game.dict())

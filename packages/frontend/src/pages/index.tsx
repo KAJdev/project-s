@@ -2,9 +2,6 @@
 import { Button } from "@/components/Theme/Button";
 import { StarBackground } from "@/components/Theme/StarBackground";
 import { motion } from "framer-motion";
-import { Inter } from "next/font/google";
-
-const inter = Inter({ subsets: ["latin"] });
 
 const MOTDS = [
   "This is the space game you've been looking for.",
@@ -24,17 +21,14 @@ export default function Home() {
   return (
     <div
       className={classes(
-        "w-screen h-screen flex gap-3 justify-center items-center flex-col select-none",
-        inter.className
+        "w-screen h-screen flex gap-3 justify-center items-center flex-col select-none"
       )}
     >
       <StarBackground centerAdapt />
 
-      <h1 className="text-[5rem] font-semibold font-mono opacity-75">
-        Project S
-      </h1>
+      <h1 className="text-[5rem] opacity-75">Project S</h1>
       <motion.h2
-        className="text-2xl text-center font-mono"
+        className="text-2xl text-center"
         initial={{
           opacity: 0,
         }}
