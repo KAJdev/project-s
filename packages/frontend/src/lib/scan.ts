@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { request } from "./api";
 import { stat } from "fs";
 import { useSelf } from "./users";
-import { useGame } from "./games";
+import { gameStore, useGame } from "./games";
 import { mapState } from "./map";
 import { getHyperSpaceDistance } from "./players";
 
@@ -309,10 +309,30 @@ export function useStarCosts(starId: ID | undefined): {
   return { economy, industry, science, warp_gate };
 }
 
+// returns the time it takes to travel from one point/Star to another in hours
 export function getETA(
-  from: { x: number; y: number },
-  to: { x: number; y: number },
-  speed: number
+  from: { x: number; y: number } | ID,
+  to: { x: number; y: number } | ID
 ) {
+  // grab the game settings
+  const scan = scanStore.getState().scan;
+  if (!scan) return 0;
+  const game = gameStore.getState().games[scan.game];
+  if (!game) return 0;
+
+  let speed = game.settings.carrier_speed;
+  // check if the two are stars with warp gates
+  if (typeof to === "string") {
+    const toStar = scan.stars.find((s) => s.id === to);
+    if (toStar?.warp_gate) {
+      speed = game.settings.warp_speed;
+    }
+    to = toStar?.position!;
+  }
+
+  if (typeof from === "string") {
+    from = scan.stars.find((s) => s.id === from)?.position!;
+  }
+
   return distance(from, to) / speed;
 }

@@ -8,43 +8,65 @@ import { InnerScanCircle, OuterScanCircle } from "./Map/ScanCircle";
 import { UseKeyOptions } from "react-use/lib/useKey";
 import { HyperspaceCircle } from "./Map/HyperspaceCircle";
 import { MapCarrier } from "./Map/Carrier";
+import { CarrierLines } from "./Map/CarrierLines";
 
 function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
   return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
 }
 
 function Stars({ scan }: { scan: Scan | null }) {
-  return (
-    <>
-      <Layer>
-        {scan?.stars.map((star) => (
-          <HyperspaceCircle key={star.id} scan={scan} starId={star.id} />
-        ))}
-      </Layer>
-      <Layer>
-        {scan?.stars.map((star) => (
-          <OuterScanCircle key={star.id} scan={scan} starId={star.id} />
-        ))}
-        {scan?.stars.map((star) => (
-          <InnerScanCircle key={star.id} scan={scan} starId={star.id} />
-        ))}
-      </Layer>
-      <Layer>
-        {scan?.stars.map((star) => (
-          <MapStar key={star.id} scan={scan} starId={star.id} />
-        ))}
-      </Layer>
-    </>
+  return useMemo(
+    () => (
+      <>
+        <Layer>
+          {scan?.stars.map((star) => (
+            <HyperspaceCircle
+              key={keys(star.id, "hyperscape")}
+              scan={scan}
+              starId={star.id}
+            />
+          ))}
+        </Layer>
+        <Layer>
+          {scan?.stars.map((star) => (
+            <OuterScanCircle
+              key={keys(star.id, "outerscan")}
+              scan={scan}
+              starId={star.id}
+            />
+          ))}
+          {scan?.stars.map((star) => (
+            <InnerScanCircle
+              key={keys(star.id, "innerscan")}
+              scan={scan}
+              starId={star.id}
+            />
+          ))}
+        </Layer>
+        <Layer>
+          {scan?.carriers.map((carrier) => (
+            <CarrierLines key={carrier.id} scan={scan} carrierId={carrier.id} />
+          ))}
+          {scan?.stars.map((star) => (
+            <MapStar key={star.id} scan={scan} starId={star.id} />
+          ))}
+        </Layer>
+      </>
+    ),
+    [scan]
   );
 }
 
 function Carriers({ scan }: { scan: Scan | null }) {
-  return (
-    <Layer>
-      {scan?.carriers.map((carrier) => (
-        <MapCarrier key={carrier.id} scan={scan} carrierId={carrier.id} />
-      ))}
-    </Layer>
+  return useMemo(
+    () => (
+      <Layer>
+        {scan?.carriers.map((carrier) => (
+          <MapCarrier key={carrier.id} scan={scan} carrierId={carrier.id} />
+        ))}
+      </Layer>
+    ),
+    [scan]
   );
 }
 
@@ -101,16 +123,11 @@ export function Map({ game }: { game: Game }) {
   const onMouseUp = useCallback(
     (e: any) => {
       const pointer = e.target.getStage()!.getPointerPosition()!;
-      if (panning) {
-        mapState.getState().setPanning(false);
-      }
-
       if (
         e.evt.button === 0 &&
-        distance(pointer, lastPointerDownPosition.current) < 2
+        distance(pointer, lastPointerDownPosition.current) < 2 &&
+        scan
       ) {
-        if (!scan) return;
-
         const transformedPointer = {
           x: (pointer.x - camera.x) / zoom,
           y: (pointer.y - camera.y) / zoom,
@@ -145,7 +162,7 @@ export function Map({ game }: { game: Game }) {
         );
       }
     },
-    [camera.x, camera.y, panning, scan, zoom]
+    [camera.x, camera.y, scan, zoom]
   );
 
   const onMouseMove = useCallback(
@@ -174,6 +191,12 @@ export function Map({ game }: { game: Game }) {
     }
   }, []);
 
+  const onPointerUp = useCallback(() => {
+    if (panning) {
+      mapState.getState().setPanning(false);
+    }
+  }, [panning]);
+
   return (
     <div className="w-screen h-screen overflow-hidden bg-[#081118]">
       <Stage
@@ -187,6 +210,7 @@ export function Map({ game }: { game: Game }) {
         onMouseMove={onMouseMove}
         onMouseDown={onMouseDown}
         onMouseLeave={onMouseLeave}
+        onPointerUp={onPointerUp}
       >
         <Entities gameId={game.id} />
       </Stage>

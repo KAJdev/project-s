@@ -2,21 +2,87 @@
 import { darken, hexToHSV, hexToRgb } from "@/lib/color";
 import { useImage } from "@/lib/image";
 import { mapState } from "@/lib/map";
-import { Scan } from "@/lib/scan";
+import { Scan, getETA } from "@/lib/scan";
 import { Html } from "react-konva-utils";
-import { Arc, Circle, Image } from "react-konva";
+import { Arc, Circle, Image, Rect } from "react-konva";
 import { Rocket } from "lucide-react";
+import { useGame } from "@/lib/games";
+import { Tooltip } from "../Theme/Tooltip";
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
 }
 
+function degToRad(angle: number) {
+  return (angle / 180) * Math.PI;
+}
+
+function getCenter(shape: {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation?: number;
+}) {
+  const angleRad = degToRad(shape.rotation || 0);
+  return {
+    x:
+      shape.x +
+      (shape.width / 2) * Math.cos(angleRad) +
+      (shape.height / 2) * Math.sin(-angleRad),
+    y:
+      shape.y +
+      (shape.height / 2) * Math.cos(angleRad) +
+      (shape.width / 2) * Math.sin(angleRad),
+  };
+}
+
+function rotateAroundPoint(
+  shape: { x: number; y: number; rotation: number },
+  deltaDeg: number,
+  point: { x: number; y: number }
+) {
+  const angleRad = degToRad(deltaDeg);
+  const x = Math.round(
+    point.x +
+      (shape.x - point.x) * Math.cos(angleRad) -
+      (shape.y - point.y) * Math.sin(angleRad)
+  );
+  const y = Math.round(
+    point.y +
+      (shape.x - point.x) * Math.sin(angleRad) +
+      (shape.y - point.y) * Math.cos(angleRad)
+  );
+  return {
+    ...shape,
+    rotation: Math.round(shape.rotation + deltaDeg),
+    x,
+    y,
+  };
+}
+
+function rotateAroundCenter(
+  shape: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    rotation: number;
+  },
+  deltaDeg: number
+) {
+  const center = getCenter(shape);
+  return rotateAroundPoint(shape, deltaDeg, center);
+}
+
 function CarrierName({
-  name,
+  from,
+  to,
   color,
   ships,
 }: {
-  name: string;
+  from: { x: number; y: number };
+  to: { x: number; y: number } | null;
   color: string | null;
   ships: number | null;
 }) {
@@ -24,32 +90,12 @@ function CarrierName({
   if (!color) {
     color = "#888888";
   }
+
   return (
-    <div
-      className="flex flex-col"
-      style={{
-        transform: "translateY(-50%)",
-        fontFamily: "monospace",
-        fontSize: 14,
-      }}
-    >
-      <p
-        className="px-2 border"
-        style={{
-          backgroundColor: darken(color, -200),
-          borderColor: color,
-        }}
-        ref={ref}
-      >
-        {name}
-      </p>
+    <div className="flex flex-col items-center justify-center w-0 h-0">
       {exists(ships) && (
         <p
-          className="px-2 w-fit -mt-[2px] border border-t-0 flex items-center gap-1"
-          style={{
-            backgroundColor: darken(color, -200),
-            borderColor: color,
-          }}
+          className="px-2 w-fit text-[14px] font-mono flex items-center gap-1 mt-20"
           ref={ref}
         >
           <Rocket size={12} fill={color} stroke={color} />
@@ -125,62 +171,58 @@ export function MapCarrier({
     return null;
   }
 
+  const currentDestination = scan.stars.find(
+    (s) => s.id === carrier.destination_queue[0]
+  );
+
+  let rotation = 0;
+
+  if (currentDestination) {
+    //  get the degrees between the carrier and the destination
+    const dx = currentDestination.position.x - carrier.position.x;
+    const dy = currentDestination.position.y - carrier.position.y;
+    rotation = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
+  }
+
   return (
     <>
-      {zoom > 10 && img ? (
+      {img ? (
         <>
           <Image
             image={img}
-            x={carrier.position.x - carrierSize / 2}
-            y={carrier.position.y - carrierSize / 2}
+            x={carrier.position.x}
+            y={carrier.position.y}
             width={carrierSize}
             height={carrierSize}
-            opacity={selectedEntities.length > 0 && !isSelected ? 0.5 : 1}
+            offsetX={carrierSize / 2}
+            offsetY={carrierSize / 2}
+            rotation={rotation}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             listening={false}
           />
-          {color && (
-            <Arc
-              x={carrier.position.x}
-              y={carrier.position.y}
-              innerRadius={carrierSize / 2}
-              outerRadius={carrierSize / 1.6}
-              angle={360}
-              fill={color}
-              opacity={0.5}
-              listening={false}
-            />
-          )}
         </>
       ) : (
-        <Circle
+        <Rect
           x={carrier.position.x}
           y={carrier.position.y}
-          radius={carrierSize / 2}
+          width={carrierSize}
+          height={carrierSize}
+          rotation={rotation}
+          offsetX={carrierSize / 2}
+          offsetY={carrierSize / 2}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           fill={owner?.color || "gray"}
-          opacity={selectedEntities.length > 0 && !isSelected ? 0.5 : 1}
           listening={false}
         />
       )}
 
-      {(hovered || isSelected) && carrier.destination_queue.length > 0 && (
-        <RotatingArcs
-          x={carrier.position.x}
-          y={carrier.position.y}
-          starSize={carrierSize}
-          zoom={zoom}
-          speed={1}
-        />
-      )}
-
-      {(hovered || isSelected || zoom > 20) &&
+      {(hovered || isSelected || zoom > 50) &&
         carrier.destination_queue.length > 0 && (
           <Html
             groupProps={{
-              x: carrier.position.x + carrierSize / 1.1,
+              x: carrier.position.x,
               y: carrier.position.y,
               scale: { x: 1 / zoom, y: 1 / zoom },
               listening: false,
@@ -193,9 +235,10 @@ export function MapCarrier({
             }}
           >
             <CarrierName
-              name={carrier.name}
               color={color}
               ships={carrier.ships ?? null}
+              from={carrier.position}
+              to={currentDestination?.position ?? null}
             />
           </Html>
         )}

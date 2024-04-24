@@ -193,14 +193,13 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
             y={star.position.y - starSize / 2}
             width={starSize}
             height={starSize}
-            opacity={selectedEntities.length > 0 && !isSelected ? 0.5 : 1}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             listening={!!flightPlanningFor}
             onMouseUp={(e) => {
-              console.log(e, flightPlanningFor);
               if (flightPlanningFor) {
                 addToCarrierDestination(starId);
+                e.cancelBubble = true;
               }
             }}
           />
@@ -225,11 +224,11 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           fill={owner?.color || "gray"}
-          opacity={selectedEntities.length > 0 && !isSelected ? 0.5 : 1}
           listening={!!flightPlanningFor}
           onMouseUp={(e) => {
             if (flightPlanningFor) {
               addToCarrierDestination(starId);
+              e.cancelBubble = true;
             }
           }}
         />

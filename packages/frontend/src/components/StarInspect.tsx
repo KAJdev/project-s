@@ -22,6 +22,7 @@ import {
   Sparkle,
 } from "lucide-react";
 import { Slider } from "./Theme/Slider";
+import { mapState } from "@/lib/map";
 
 export function StarAspect({
   star,
@@ -331,11 +332,18 @@ export function StarInspect({ starId }: { starId: ID }) {
                 onClick={() => {
                   setBuildCarrierLoading(true);
 
-                  buildCarrier(star.id).finally(() => {
-                    setBuildCarrierLoading(false);
-                  });
+                  buildCarrier(star.id)
+                    .then((newcarrier) => {
+                      if (!newcarrier) return;
+                      mapState.getState().addSelected({
+                        id: newcarrier.id,
+                        type: "carrier",
+                      });
+                      mapState.getState().setFlightPlanningFor(newcarrier.id);
+                    })
+                    .finally(() => setBuildCarrierLoading(false));
                 }}
-                disabled={(player?.cash ?? 0) < 25}
+                disabled={(player?.cash ?? 0) < 25 || (star.ships ?? 0) < 1}
                 loading={buildCarrierLoading}
               >
                 <p className="px-2 py-[0.4rem] w-full text-left">Build </p>
