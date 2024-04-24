@@ -236,6 +236,22 @@ export async function addToCarrierDestination(starId: ID) {
   return newCarrier;
 }
 
+export async function removeCarrierDestination(carrierId: ID) {
+  const scan = scanStore.getState().scan;
+  if (!scan) return;
+
+  const carrier = scan.carriers.find((c) => c.id === carrierId);
+  if (!carrier) return;
+
+  const newDestinations = carrier.destination_queue.slice(0, -1);
+
+  const newCarrier = await updateCarrier(carrier.id, {
+    destinations: newDestinations,
+  });
+
+  return newCarrier;
+}
+
 export function useScan(gameId: ID | undefined) {
   const scan = scanStore((state) => state.scan);
   useEffect(() => {

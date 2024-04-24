@@ -1,12 +1,13 @@
 import {
   Carrier,
   Star,
+  removeCarrierDestination,
   usePlayers,
   useSpecificPlayer,
   useStars,
 } from "@/lib/scan";
 import { Field } from "./Inspector";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { Tooltip } from "./Theme/Tooltip";
 import { mapState } from "@/lib/map";
 import { Button } from "./Theme/Button";
@@ -46,7 +47,24 @@ export function DestinationGraph({ carrier }: { carrier: Carrier }) {
           {stars.map((star, i) => (
             <>
               <GraphStar key={star.id} star={star} />
-              <div className="w-8 border border-dashed border-white/10" />
+              <div className="w-8 flex items-center justify-center group relative">
+                <div className="w-8 border border-dashed border-white/10 relative" />
+                {i === stars.length - 1 &&
+                  carrier.destination_queue.length > 1 && (
+                    <Tooltip
+                      content="Remove Destination"
+                      passThroughClassName="absolute"
+                    >
+                      <X
+                        size={18}
+                        className="cursor-pointer opacity-0 group-hover:opacity-75"
+                        onClick={() => {
+                          removeCarrierDestination(carrier.id);
+                        }}
+                      />
+                    </Tooltip>
+                  )}
+              </div>
             </>
           ))}
           <Tooltip content="Add Destination">
