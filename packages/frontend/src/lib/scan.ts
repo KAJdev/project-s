@@ -5,6 +5,7 @@ import { useSelf } from "./users";
 import { gameStore, useGame } from "./games";
 import { mapState } from "./map";
 import { getHyperSpaceDistance } from "./players";
+import { distance } from "./utils";
 
 export type Technology =
   | "scanning"
@@ -68,10 +69,6 @@ export type Scan = {
   carriers: Carrier[];
   players: Player[];
 };
-
-function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
-  return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
-}
 
 export const scanStore = create<{
   scan: Scan | null;
@@ -243,6 +240,24 @@ export async function addToCarrierDestination(starId: ID) {
   return newCarrier;
 }
 
+export function editDestinationAction(
+  carrierId: ID,
+  index: number,
+  action: "collect" | "drop" | null
+) {
+  const scan = scanStore.getState().scan;
+  if (!scan) return;
+
+  const carrier = scan.carriers.find((c) => c.id === carrierId);
+  if (!carrier) return;
+
+  const newDestinations = carrier.destination_queue.map((d, i) =>
+    i === index ? { ...d, action } : d
+  );
+
+  updateCarrier(carrierId, { destinations: newDestinations });
+}
+
 export async function removeCarrierDestination(carrierId: ID) {
   const scan = scanStore.getState().scan;
   if (!scan) return;
@@ -333,7 +348,7 @@ export function useStars(ids: ID[]) {
     .filter(exists) as Star[];
 }
 
-export function useCarrier(carrierId: ID) {
+export function useCarrier(carrierId: ID | undefined | null) {
   const scan = scanStore((state) => state.scan);
   return scan?.carriers.find((c) => c.id === carrierId);
 }

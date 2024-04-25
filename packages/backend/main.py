@@ -11,7 +11,7 @@ from modules.utils import from_wh, print, wh_msg
 from modules.gateway import GatewayOpCode
 from modules import gateway, db
 from modules.auth import authenticate
-from modules.runtime import games_tick
+from modules.runtime import games_tick, hourly_tick
 
 load_dotenv()
 
@@ -32,6 +32,9 @@ async def attach_db(app, loop):
     await db.init()
     games_tick.loop = loop
     games_tick.start()
+
+    hourly_tick.loop = loop
+    hourly_tick.start()
 
 
 blueprint_names = [

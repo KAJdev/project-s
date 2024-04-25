@@ -108,15 +108,15 @@ async def get_scan(request: Request, game_id: str):
     return json(await scan_game(game_id=game_id, user_id=request.ctx.user.id))
 
 
+async def send_scan(game: Game, player: Player):
+    scan = await scan_game(game=game, player_id=player.id)
+    gateway.send_to_user(
+        player.user,
+        gateway.GatewayOpCode.GALAXY_SCAN,
+        scan,
+    )
+
+
 def on_scan(game: Game):
-    print(f"Scanning game {game.id}")
     for player in game.members:
-
-        async def send_scan():
-            gateway.send_to_user(
-                player.user,
-                gateway.GatewayOpCode.GALAXY_SCAN,
-                await scan_game(game=game, player_id=player.id),
-            )
-
-        asyncio.create_task(send_scan())
+        asyncio.create_task(send_scan(game, player))

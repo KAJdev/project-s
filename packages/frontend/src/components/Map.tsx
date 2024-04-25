@@ -9,10 +9,7 @@ import { UseKeyOptions } from "react-use/lib/useKey";
 import { HyperspaceCircle } from "./Map/HyperspaceCircle";
 import { MapCarrier } from "./Map/Carrier";
 import { CarrierLines } from "./Map/CarrierLines";
-
-function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
-  return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
-}
+import { distance } from "@/lib/utils";
 
 function Stars({ scan }: { scan: Scan | null }) {
   return useMemo(

@@ -2,27 +2,29 @@
 import {
   Carrier,
   Star,
+  editDestinationAction,
   removeCarrierDestination,
   usePlayers,
   useSpecificPlayer,
   useStars,
 } from "@/lib/scan";
 import { Field } from "./Inspector";
-import { Plus, X } from "lucide-react";
+import { Loader, Plus, X } from "lucide-react";
 import { Tooltip } from "./Theme/Tooltip";
 import { mapState } from "@/lib/map";
 import { Button } from "./Theme/Button";
 import { Select } from "./Theme/Select";
 
-function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
-  return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
-}
-
-function GraphStar({ star }: { star: Star }) {
+function GraphStar({
+  star,
+  carrier,
+  index,
+}: {
+  star: Star;
+  carrier: Carrier;
+  index: number;
+}) {
   const player = useSpecificPlayer(star.occupier);
-  const [action, setAction] = useState<"collect" | "drop" | "nothing">(
-    "collect"
-  );
   return (
     <div className="flex justify-between gap-2 items-center w-full">
       <div className="flex items-center gap-2">
@@ -34,18 +36,29 @@ function GraphStar({ star }: { star: Star }) {
         />
         <p>{star.name}</p>
       </div>
-      <Tooltip content="Ship Action">
+      <div className="flex gap-2 items-center">
+        {index === carrier.destination_queue.length - 1 && index > 0 && (
+          <Tooltip content="Remove Destination">
+            <X
+              onClick={() => {
+                removeCarrierDestination(carrier.id);
+              }}
+              className="cursor-pointer opacity-50 hover:opacity-100"
+            />
+          </Tooltip>
+        )}
         <Select
-          value={action}
-          onChange={(e) => setAction(e)}
-          className="w-fit"
+          value={carrier.destination_queue[index].action ?? ""}
+          onChange={(e) => editDestinationAction(carrier.id, index, e || null)}
+          fullWidth
+          className="w-[7rem]"
           options={[
             { label: "Collect", value: "collect" },
             { label: "Drop", value: "drop" },
-            { label: "Nothing", value: "nothing" },
+            { label: "Nothing", value: "" },
           ]}
         />
-      </Tooltip>
+      </div>
     </div>
   );
 }
@@ -75,7 +88,12 @@ export function DestinationGraph({ carrier }: { carrier: Carrier }) {
         >
           {stars.map((star, i) => (
             <>
-              <GraphStar key={star.id} star={star} />
+              <GraphStar
+                key={star.id}
+                star={star}
+                carrier={carrier}
+                index={i}
+              />
               {i < stars.length - 1 && (
                 <div className="w-8 mr-auto flex justify-center" key={i}>
                   <div className="w-0 h-3 border border-white/20 border-dotted" />

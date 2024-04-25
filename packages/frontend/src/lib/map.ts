@@ -1,4 +1,7 @@
 import { create } from "zustand";
+import { scanStore, useCarrier, usePlayer } from "./scan";
+import { getHyperSpaceDistance } from "./players";
+import { distance } from "./utils";
 
 type SelectionObject = {
   type: "star" | "carrier";
@@ -48,4 +51,43 @@ export const mapState = create<MapState>((set) => ({
 
 export function useZoom() {
   return mapState((s) => s.zoom);
+}
+
+export function useFlightPlanningInfo(starId: ID): {
+  outsideRange: boolean;
+  isTarget: boolean;
+  isLastTarget: boolean;
+} {
+  const flightPlanningFor = mapState((s) => s.flightPlanningFor);
+  const carrier = useCarrier(flightPlanningFor);
+  const player = usePlayer();
+  if (!flightPlanningFor || !carrier || !player)
+    return {
+      outsideRange: false,
+      isTarget: false,
+      isLastTarget: false,
+    };
+
+  const latestDestination =
+    carrier.destination_queue[carrier.destination_queue.length - 1];
+  const lastDestinationStar = scanStore
+    .getState()
+    .scan?.stars.find((s) => s.id === latestDestination?.star);
+  const thisStar = scanStore
+    .getState()
+    .scan?.stars.find((s) => s.id === starId);
+  if (!thisStar)
+    return {
+      outsideRange: false,
+      isTarget: false,
+      isLastTarget: false,
+    };
+
+  return {
+    outsideRange:
+      distance(thisStar.position, (lastDestinationStar ?? carrier).position) >
+      getHyperSpaceDistance(player),
+    isTarget: carrier.destination_queue.some((d) => d.star === starId),
+    isLastTarget: latestDestination?.star === starId,
+  };
 }

@@ -10,16 +10,18 @@ from blueprints.players import player_tick
 
 
 async def game_tick(game: Game, hourly=False):
+    print(f"Game tick ({game.name}) {game.id}")
     stars = await Star.find(Star.game == game.id).to_list(None)
     await star_tick(game, stars, hourly=hourly)
     await carrier_tick(game, stars, hourly=hourly)
     await player_tick(game, stars, hourly=hourly)
     on_scan(game)
+    print(f"finished tick for game ({game.name}) {game.id}", important=True)
 
 
 @aiocron.crontab("1-59 * * * *", start=False)
 async def games_tick():
-    print("Game tick", important=True)
+    print("Minutely tick", important=True)
     games = await Game.find(
         Game.started_at != None, Game.winner == None, fetch_links=True
     ).to_list(None)

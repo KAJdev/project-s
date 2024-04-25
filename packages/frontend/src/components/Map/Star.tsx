@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/alt-text */
 import { darken, hexToHSV, hexToRgb } from "@/lib/color";
 import { useImage } from "@/lib/image";
-import { mapState } from "@/lib/map";
+import { mapState, useFlightPlanningInfo } from "@/lib/map";
 import { Scan, addToCarrierDestination, useCarriersAround } from "@/lib/scan";
 import { Html } from "react-konva-utils";
 import { Arc, Circle, Image } from "react-konva";
@@ -171,6 +171,7 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
   );
 
   const carriers = useCarriersAround(star?.position, 0.1);
+  const flightPlanInfo = useFlightPlanningInfo(starId);
   const totalShips =
     (star?.ships ?? 0) +
     carriers
@@ -198,7 +199,8 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
             height={starSize}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
-            listening={!!flightPlanningFor}
+            opacity={flightPlanInfo.outsideRange ? 0.2 : 1}
+            listening={!flightPlanInfo.outsideRange}
             onMouseUp={(e) => {
               if (flightPlanningFor) {
                 addToCarrierDestination(starId);
@@ -216,6 +218,7 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
               fill={color}
               opacity={0.5}
               listening={false}
+              visible={!flightPlanInfo.outsideRange}
             />
           )}
         </>
@@ -227,7 +230,8 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           fill={owner?.color || "gray"}
-          listening={!!flightPlanningFor}
+          opacity={flightPlanInfo.outsideRange ? 0.2 : 1}
+          listening={!flightPlanInfo.outsideRange}
           onMouseUp={(e) => {
             if (flightPlanningFor) {
               addToCarrierDestination(starId);
@@ -237,7 +241,7 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
         />
       )}
 
-      {(hovered || isSelected) && (
+      {(hovered || isSelected) && !flightPlanInfo.outsideRange && (
         <RotatingArcs
           x={star.position.x}
           y={star.position.y}
@@ -259,6 +263,7 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
             style: {
               pointerEvents: "none",
               zIndex: isSelected || hovered ? 100 : 0,
+              opacity: flightPlanInfo.outsideRange ? 0.2 : 1,
             },
           }}
         >
