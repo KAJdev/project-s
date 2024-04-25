@@ -172,7 +172,7 @@ export function MapCarrier({
   }
 
   const currentDestination = scan.stars.find(
-    (s) => s.id === carrier.destination_queue[0]
+    (s) => s.id === carrier.destination_queue[0]?.star
   );
 
   let rotation = 0;

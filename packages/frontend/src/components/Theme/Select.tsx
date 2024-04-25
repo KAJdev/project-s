@@ -32,7 +32,7 @@ export function Select({
     label: ReactNode;
     value: string;
     icon?: ReactNode;
-    disabled: boolean;
+    disabled?: boolean;
   }[];
   placeholder?: string;
   popoverClassName?: string;

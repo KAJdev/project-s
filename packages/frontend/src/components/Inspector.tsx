@@ -62,7 +62,7 @@ export function Field({
           <p className="uppercase">{label}</p>
           {sublabel && <p className="text-xs opacity-50">{sublabel}</p>}
         </div>
-        <div className="p-2">{children}</div>
+        <div className={classes("p-2", className)}>{children}</div>
       </div>
     );
   }

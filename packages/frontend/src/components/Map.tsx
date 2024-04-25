@@ -82,6 +82,7 @@ function Entities({ gameId }: { gameId: ID }) {
 
 export function Map({ game }: { game: Game }) {
   const scan = useScan(game.id);
+  const parentRef = useRef<HTMLDivElement>(null);
   const { zoom, camera, panning } = mapState();
   const { width, height } = useWindowSize();
   const stage = React.useRef<any>(null);
@@ -91,6 +92,7 @@ export function Map({ game }: { game: Game }) {
   });
 
   useEffect(() => {
+    const pr = parentRef.current;
     const handleWheel = (e: WheelEvent) => {
       const ms = mapState.getState();
 
@@ -116,8 +118,8 @@ export function Map({ game }: { game: Game }) {
       });
     };
 
-    window.addEventListener("wheel", handleWheel);
-    return () => window.removeEventListener("wheel", handleWheel);
+    pr?.addEventListener("wheel", handleWheel);
+    return () => pr?.removeEventListener("wheel", handleWheel);
   }, [height, width, zoom]);
 
   const onMouseUp = useCallback(
@@ -198,7 +200,10 @@ export function Map({ game }: { game: Game }) {
   }, [panning]);
 
   return (
-    <div className="w-screen h-screen overflow-hidden bg-[#081118]">
+    <div
+      ref={parentRef}
+      className="w-screen h-screen overflow-hidden bg-[#081118]"
+    >
       <Stage
         width={width}
         ref={stage}

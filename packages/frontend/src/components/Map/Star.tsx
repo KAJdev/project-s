@@ -170,9 +170,12 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
     (e) => e.type === "star" && e.id === starId
   );
 
-  const carriers = useCarriersAround(star?.position);
+  const carriers = useCarriersAround(star?.position, 0.1);
   const totalShips =
-    (star?.ships ?? 0) + carriers.reduce((acc, c) => acc + c.ships, 0);
+    (star?.ships ?? 0) +
+    carriers
+      .filter((c) => c.owner === star?.occupier)
+      .reduce((acc, c) => acc + c.ships, 0);
 
   const starSize = Math.max(Math.min(0.5, lerp(30, 80, 0 / 50) / zoom), 0.1);
 

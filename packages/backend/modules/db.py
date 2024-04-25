@@ -54,6 +54,7 @@ class User(Document):
 
     class Settings:
         name = "users"
+        use_state_management = True
 
 
 class GameSettings(BaseModel):
@@ -120,6 +121,7 @@ class Game(Document):
 
     class Settings:
         name = "games"
+        use_state_management = True
 
 
 class Technology:
@@ -211,6 +213,7 @@ class Player(Document):
 
     class Settings:
         name = "players"
+        use_state_management = True
 
 
 class Message(Document):
@@ -227,6 +230,7 @@ class Message(Document):
 
     class Settings:
         name = "messages"
+        use_state_management = True
 
 
 class Star(Document):
@@ -262,6 +266,14 @@ class Star(Document):
 
     def get_warp_gate_cost(self, terraforming_level: int = 1):
         return (50 * 2 * 100) / (self.resources + (5 * terraforming_level))
+
+    def get_all_costs(self, terraforming_level: int = 1):
+        return {
+            "economy": self.get_economy_upgrade_cost(terraforming_level),
+            "industry": self.get_industry_upgrade_cost(terraforming_level),
+            "science": self.get_science_upgrade_cost(terraforming_level),
+            "warp_gate": self.get_warp_gate_cost(terraforming_level),
+        }
 
     def dict(self):
         d = super().model_dump()
@@ -303,6 +315,12 @@ class Star(Document):
 
     class Settings:
         name = "stars"
+        use_state_management = True
+
+
+class Destination(BaseModel):
+    star: str
+    action: Optional[str] = Field(default="collect")  # collect, drop, None
 
 
 class Carrier(Document):
@@ -311,7 +329,7 @@ class Carrier(Document):
     owner: str
     name: str
     position: Position
-    destination_queue: list[str] = Field(default_factory=list)  # list of star ids
+    destination_queue: list[Destination] = Field(default_factory=list)
     ships: int = Field(default=0)
 
     def dict(self):
@@ -324,11 +342,18 @@ class Carrier(Document):
             d["destination_queue"] = [d["destination_queue"][0]]
         return d
 
-    def move(self, game: Game, stars: list[Star]):
+    async def move(self, game: Game, stars: list[Star]):
         if not self.destination_queue:
             return
 
-        destination = next(s for s in stars if s.id == self.destination_queue[0])
+        try:
+            destination = next(
+                s for s in stars if s.id == self.destination_queue[0].star
+            )
+        except StopIteration:
+            # destination no longer exists
+            self.destination_queue.pop(0)
+            return
 
         distance_to_move = distance(
             (self.position.x, self.position.y),
@@ -343,7 +368,15 @@ class Carrier(Document):
 
         if distance_to_move <= speed:
             self.position = destination.position
-            self.destination_queue.pop(0)
+            popped = self.destination_queue.pop(0)
+
+            if popped.action == "collect":
+                self.ships += destination.ships
+                await destination.set({Star.ships: 0})
+            elif popped.action == "drop" and self.ships > 1:
+                await destination.inc({Star.ships: self.ships - 1})
+                self.ships = 1
+
         else:
             self.position.x += (
                 (destination.position.x - self.position.x) / distance_to_move * speed
@@ -354,6 +387,7 @@ class Carrier(Document):
 
     class Settings:
         name = "carriers"
+        use_state_management = True
 
 
 async def init():

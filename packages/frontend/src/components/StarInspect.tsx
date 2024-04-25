@@ -4,6 +4,7 @@ import {
   Star,
   buildCarrier,
   transferShips,
+  upgradeStar,
   useCarriersAround,
   usePlayer,
   useSpecificPlayer,
@@ -42,6 +43,7 @@ export function StarAspect({
   aspect: "economy" | "industry" | "science";
   sublabel?: string;
 }) {
+  const [loading, setLoading] = useState(false);
   return (
     <Field variant="box" label={aspect} sublabel={sublabel}>
       <p className="w-full text-center text-2xl">{star[aspect]}</p>
@@ -49,8 +51,10 @@ export function StarAspect({
         <Button
           className="w-full justify-center mt-2 pr-0 py-0"
           variant="vibrant"
+          loading={loading}
           onClick={() => {
-            console.log(`Upgrade ${aspect}`);
+            setLoading(true);
+            upgradeStar(star.id, aspect).finally(() => setLoading(false));
           }}
           disabled={starCosts[aspect] > (player?.cash ?? 0)}
         >

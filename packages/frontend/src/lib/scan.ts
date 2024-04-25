@@ -15,6 +15,8 @@ export type Technology =
   | "banking"
   | "manufacturing";
 
+export type StarAspect = "economy" | "industry" | "science";
+
 type BaseStar = {
   id: ID;
   game: ID;
@@ -35,13 +37,15 @@ type StarScanData = {
 
 export type Star = BaseStar & Partial<StarScanData>;
 
+export type Destination = { star: ID; action: "collect" | "drop" | null };
+
 export type Carrier = {
   id: ID;
   game: ID;
   owner: ID;
   name: string;
   position: { x: number; y: number };
-  destination_queue: ID[];
+  destination_queue: Destination[];
   ships: number;
 };
 
@@ -159,7 +163,7 @@ export async function updateCarrier(
     destinations,
   }: {
     name?: string;
-    destinations?: ID[];
+    destinations?: Destination[];
   }
 ) {
   const scan = scanStore.getState().scan;
@@ -220,7 +224,7 @@ export async function addToCarrierDestination(starId: ID) {
   const lastDestination =
     carrier.destination_queue[carrier.destination_queue.length - 1];
   const lastPosition =
-    scan.stars.find((s) => s.id === lastDestination)?.position ??
+    scan.stars.find((s) => s.id === lastDestination?.star)?.position ??
     carrier.position;
   const newDestination = scan.stars.find((s) => s.id === starId)?.position!;
   const owner = scan.players.find((p) => p.id === carrier.owner);
@@ -230,7 +234,10 @@ export async function addToCarrierDestination(starId: ID) {
     return;
 
   const newCarrier = await updateCarrier(carrier.id, {
-    destinations: carrier.destination_queue.concat(starId),
+    destinations: carrier.destination_queue.concat({
+      star: starId,
+      action: "collect",
+    }),
   });
 
   return newCarrier;
@@ -250,6 +257,41 @@ export async function removeCarrierDestination(carrierId: ID) {
   });
 
   return newCarrier;
+}
+
+export async function upgradeStar(starId: ID, type: StarAspect) {
+  const scan = scanStore.getState().scan;
+  if (!scan) return;
+
+  const star = scan.stars.find((s) => s.id === starId);
+  if (!star) return;
+
+  const player = scan.players.find((p) => p.id === star.occupier);
+  if (!player) return;
+
+  const cost = getStarCosts(star, player);
+
+  if (player.cash! < cost[type]) return;
+
+  const newStar = await request<Star>(
+    `/games/${scan.game}/stars/${starId}/upgrade`,
+    {
+      method: "PATCH",
+      body: { aspect: type },
+    }
+  );
+
+  if (!newStar) return;
+
+  scanStore.getState().setScan({
+    ...scan,
+    stars: scan.stars.map((s) => (s.id === starId ? newStar : s)),
+    players: scan.players.map((p) =>
+      p.id === player.id ? { ...p, cash: p.cash! - cost[type] } : p
+    ),
+  });
+
+  return newStar;
 }
 
 export function useScan(gameId: ID | undefined) {
@@ -313,6 +355,24 @@ export function useCarriersAround(
   );
 }
 
+export function getStarCosts(star: Star, player: Player) {
+  const terraforming_level = player.research_levels.terraforming;
+  const resources = star?.resources || 0;
+
+  const economy =
+    (2.5 * 2 * (star?.economy! + 1)) /
+    ((resources + 5 * terraforming_level) / 100);
+  const industry =
+    (5 * 2 * (star?.industry! + 1)) /
+    ((resources + 5 * terraforming_level) / 100);
+  const science =
+    (20 * 2 * (star?.science! + 1)) /
+    ((resources + 5 * terraforming_level) / 100);
+  const warp_gate = (50 * 2 * 100) / (resources + 5 * terraforming_level);
+
+  return { economy, industry, science, warp_gate };
+}
+
 export function useStarCosts(starId: ID | undefined): {
   economy: number;
   industry: number;
@@ -324,24 +384,10 @@ export function useStarCosts(starId: ID | undefined): {
   const star = scan?.stars.find((s) => s.id === starId);
   const player = scan?.players.find((p) => p.id === star?.occupier);
 
-  if (!game || !player)
+  if (!game || !player || !star)
     return { economy: 0, industry: 0, science: 0, warp_gate: 0 };
 
-  const terraforming_level = player.research_levels.terraforming;
-  const resources = star?.resources || 0;
-
-  const economy =
-    (2.5 * 2 * (star?.economy || 0 + 1)) /
-    ((resources + 5 * terraforming_level) / 100);
-  const industry =
-    (5 * 2 * (star?.industry || 0 + 1)) /
-    ((resources + 5 * terraforming_level) / 100);
-  const science =
-    (20 * 2 * (star?.science || 0 + 1)) /
-    ((resources + 5 * terraforming_level) / 100);
-  const warp_gate = (50 * 2 * 100) / (resources + 5 * terraforming_level);
-
-  return { economy, industry, science, warp_gate };
+  return getStarCosts(star!, player);
 }
 
 // returns the time it takes to travel from one point/Star to another in hours

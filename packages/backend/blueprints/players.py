@@ -6,4 +6,4 @@ async def player_tick(game: Game, stars: list[Star], hourly=False):
         if hourly:
             player.do_research(game, stars)
         player.do_economy(stars)
-        await player.save()
+        await player.save_changes()

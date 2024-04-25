@@ -23,7 +23,7 @@ export function SelfInspect() {
       <div className="flex justify-between">
         <p style={{ color: self.color }}>{self.name}</p>
         <p>
-          ${self.cash}
+          ${self.cash?.toFixed(0)}
           <span className="text-green-500/75 ml-2 bg-white/10">
             +${cashPerHour.toFixed(2)}/hr
           </span>

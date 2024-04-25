@@ -17,20 +17,23 @@ import { Tooltip } from "./Theme/Tooltip";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, Rocket } from "lucide-react";
 import { DestinationGraph } from "./DestinationGraph";
+import { mapState } from "@/lib/map";
 
 function CarrierView({
   carrier,
   owner,
   defaultOpen,
+  index,
 }: {
   carrier: Carrier;
   owner: Player;
   defaultOpen?: boolean;
+  index: number;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const self = usePlayer();
   return (
-    <div>
+    <div className={classes(open && "mb-5 last:mb-0")}>
       <div
         key={carrier.id}
         className={classes(
@@ -64,7 +67,6 @@ function CarrierView({
                 opacity: 1,
                 height: "auto",
                 marginTop: "1rem",
-                marginBottom: "1rem",
               },
               collapsed: {
                 opacity: 0,
@@ -87,12 +89,6 @@ function CarrierView({
           </motion.section>
         )}
       </AnimatePresence>
-      <hr
-        className={classes(
-          "border border-white/10 border-dashed duration-100 opacity-0",
-          open && "opacity-100 mb-3"
-        )}
-      />
     </div>
   );
 }
@@ -101,19 +97,25 @@ export function CarrierInspect({ carrierIds }: { carrierIds: ID[] }) {
   const carriers = useCarriers(carrierIds);
   const player = usePlayer();
   const players = usePlayers(carriers?.map((c) => c.owner));
+  const flightPlanningFor = mapState((s) => s.flightPlanningFor);
 
   if (carriers.length === 0) return null;
 
   return (
     <Inspector>
-      {carriers.map((carrier) => (
-        <CarrierView
-          key={carrier.id}
-          carrier={carrier}
-          owner={players.find((p) => p.id === carrier.owner)!}
-          defaultOpen={carriers.length === 1}
-        />
-      ))}
+      <div className="flex flex-col gap-3">
+        {carriers.map((carrier, i) => (
+          <CarrierView
+            key={carrier.id}
+            carrier={carrier}
+            owner={players.find((p) => p.id === carrier.owner)!}
+            defaultOpen={
+              carriers.length === 1 || flightPlanningFor === carrier.id
+            }
+            index={i}
+          />
+        ))}
+      </div>
     </Inspector>
   );
 }
