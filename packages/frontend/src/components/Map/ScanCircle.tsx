@@ -18,7 +18,7 @@ export function InnerScanCircle({ scan, starId }: { scan: Scan; starId: ID }) {
       y={star.position.y}
       radius={getScanningDistance(player)}
       opacity={1}
-      fill={darken(player.color, -130)}
+      fill={"#192436"}
       // strokeWidth={1 / zoom}
       // dash={[10 / zoom, 5 / zoom]}
       listening={false}

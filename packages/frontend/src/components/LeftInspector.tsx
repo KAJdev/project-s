@@ -10,7 +10,7 @@ export function LeftInspector() {
   const carriers = selected.filter((s) => s.type === "carrier");
 
   return (
-    <div className="flex flex-col sm:gap-4 w-full">
+    <div className="flex flex-col sm:gap-4 w-fit h-full flex-wrap relative">
       {!flightPlanningFor && <SelfInspect />}
       {carriers.length > 0 && (
         <CarrierInspect carrierIds={carriers.map((c) => c.id)} />

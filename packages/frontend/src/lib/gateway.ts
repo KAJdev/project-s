@@ -172,6 +172,7 @@ export function useGateway() {
           if (currentScan?.game === data.d.game) {
             prettyPrint("GALAXY SCAN:", data.d);
             scanStore.getState().setScan(data.d);
+            scanStore.getState().setLastTick(Date.now());
           }
           break;
         }

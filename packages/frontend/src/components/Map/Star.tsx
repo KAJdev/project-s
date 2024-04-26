@@ -51,7 +51,7 @@ function StarName({
   resources,
   ships,
 }: {
-  name: string;
+  name: string | null;
   color: string | null;
   resources: {
     economy: number;
@@ -66,28 +66,30 @@ function StarName({
   }
   return (
     <div
-      className="flex flex-col"
+      className="flex flex-col items-center"
       style={{
-        transform: "translateY(-50%)",
+        transform: "translateX(-50%)",
         fontFamily: "monospace",
         fontSize: 14,
       }}
     >
-      <p
-        className="px-2 border"
-        style={{
-          backgroundColor: darken(color, -200),
-          borderColor: color,
-        }}
-        ref={ref}
-      >
-        {name}
-      </p>
+      {name && (
+        <p
+          className="px-2"
+          style={{
+            //backgroundColor: darken(color, -200),
+            borderColor: color,
+          }}
+          ref={ref}
+        >
+          {name}
+        </p>
+      )}
       {exists(ships) && (
         <p
-          className="px-2 w-fit -mt-[2px] border border-t-0 flex items-center gap-1"
+          className="px-2 w-fit -mt-[2px] border-t-0 flex items-center gap-1"
           style={{
-            backgroundColor: darken(color, -200),
+            //backgroundColor: darken(color, -200),
             borderColor: color,
           }}
           ref={ref}
@@ -97,7 +99,7 @@ function StarName({
         </p>
       )}
 
-      {/* {resources && (
+      {/* {resources && false && (
         <div
           className="flex gap-5 px-2"
           style={{
@@ -188,7 +190,7 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
 
   return (
     <>
-      {zoom > 10 && img ? (
+      {zoom > 40 && img ? (
         <>
           <Image
             image={img}
@@ -254,8 +256,8 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
       {(hovered || isSelected || zoom > 50) && (
         <Html
           groupProps={{
-            x: star.position.x + starSize / 1.1,
-            y: star.position.y,
+            x: star.position.x,
+            y: star.position.y + starSize / 1.1,
             scale: { x: 1 / zoom, y: 1 / zoom },
             listening: false,
           }}
@@ -268,11 +270,11 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
           }}
         >
           <StarName
-            name={star.name}
+            name={zoom > 175 ? star.name : null}
             color={color}
             ships={exists(star.ships) ? totalShips : null}
             resources={
-              star.resources
+              star.resources && zoom > 75
                 ? {
                     economy: star.economy!,
                     industry: star.industry!,

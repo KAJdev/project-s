@@ -133,6 +133,18 @@ class Technology:
     banking = "banking"
     manufacturing = "manufacturing"
 
+    @staticmethod
+    def all():
+        return [
+            Technology.scanning,
+            Technology.hyperspace,
+            Technology.terraforming,
+            Technology.experimentation,
+            Technology.weapons,
+            Technology.banking,
+            Technology.manufacturing,
+        ]
+
 
 class Research(BaseModel):
     scanning: int = Field(default=1)
@@ -150,6 +162,7 @@ class Player(Document):
     game: str
     user: str
     color: str
+    bio: Optional[str] = Field(default=None)
 
     cash: float = Field(default=0)
 
@@ -210,6 +223,13 @@ class Player(Document):
                 self.cash += (
                     star.economy / 0.25 / 60
                 )  # because we are running this every minute
+
+    def do_production(self, stars: list["Star"]):
+        for star in stars:
+            if star.occupier == self.id:
+                self.cash += (
+                    star.economy * 10
+                )  # because this runs every production cycle
 
     class Settings:
         name = "players"
@@ -378,15 +398,63 @@ class Carrier(Document):
                 self.ships = 1
 
         else:
-            self.position.x += (
-                (destination.position.x - self.position.x) / distance_to_move * speed
+            direction = (
+                (destination.position.x - self.position.x) / distance_to_move,
+                (destination.position.y - self.position.y) / distance_to_move,
             )
-            self.position.y += (
-                (destination.position.y - self.position.y) / distance_to_move * speed
-            )
+
+            self.position.x += direction[0] * speed
+            self.position.y += direction[1] * speed
 
     class Settings:
         name = "carriers"
+        use_state_management = True
+
+
+class CombatEvent(BaseModel):
+    star_id: str
+    star_name: str
+    attacking_players: list[Link[Player]]
+    defending_players: list[Link[Player]]
+    attacker_ships: int
+    defender_ships: int
+    winner: str
+
+
+class ProductionEvent(BaseModel):
+    total_cash_created: int
+
+
+class Event(Document):
+    id: str = Field(default_factory=generate_id)
+    game: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    data: CombatEvent | ProductionEvent
+    type: str
+
+    def dict(self):
+        d = super().model_dump()
+        return convert_dates_to_iso(d)
+
+    class Settings:
+        name = "events"
+        use_state_management = True
+
+
+class News(Document):
+    id: str = Field(default_factory=generate_id)
+    game: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    title: str
+    content: str
+    tags: list[str] = Field(default_factory=list)
+
+    def dict(self):
+        d = super().model_dump()
+        return convert_dates_to_iso(d)
+
+    class Settings:
+        name = "news"
         use_state_management = True
 
 
@@ -395,6 +463,6 @@ async def init():
     client = AsyncIOMotorClient(getenv("MONGO_URL"))
     await init_beanie(
         database=client[getenv("ENV")],
-        document_models=[User, Game, Player, Message, Star, Carrier],
+        document_models=[User, Game, Player, Message, Star, Carrier, Event, News],
     )
     print("Connected to MongoDB", important=True)

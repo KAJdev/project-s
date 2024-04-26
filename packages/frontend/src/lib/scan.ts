@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { request } from "./api";
 import { stat } from "fs";
-import { useSelf } from "./users";
+import { useSelf, userStore } from "./users";
 import { gameStore, useGame } from "./games";
 import { mapState } from "./map";
 import { getHyperSpaceDistance } from "./players";
@@ -73,9 +73,13 @@ export type Scan = {
 export const scanStore = create<{
   scan: Scan | null;
   setScan: (scan: Scan | null) => void;
+  lastTick: number | null;
+  setLastTick: (tick: number | null) => void;
 }>((set) => ({
   scan: null,
   setScan: (scan) => set({ scan }),
+  lastTick: null,
+  setLastTick: (lastTick) => set({ lastTick }),
 }));
 
 export async function fetchScan(gameId: ID) {

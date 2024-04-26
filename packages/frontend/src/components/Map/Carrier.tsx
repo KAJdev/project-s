@@ -8,9 +8,21 @@ import { Arc, Circle, Image, Rect } from "react-konva";
 import { Rocket } from "lucide-react";
 import { useGame } from "@/lib/games";
 import { Tooltip } from "../Theme/Tooltip";
+import { distance } from "@/lib/utils";
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
+}
+
+function positionLerp(
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  t: number
+) {
+  return {
+    x: lerp(a.x, b.x, t),
+    y: lerp(a.y, b.y, t),
+  };
 }
 
 function degToRad(angle: number) {
@@ -92,12 +104,16 @@ function CarrierName({
   }
 
   return (
-    <div className="flex flex-col items-center justify-center w-0 h-0">
+    <div
+      className="flex flex-col items-center"
+      style={{
+        transform: "translateX(-50%)",
+        fontFamily: "monospace",
+        fontSize: 14,
+      }}
+    >
       {exists(ships) && (
-        <p
-          className="px-2 w-fit text-[14px] font-mono flex items-center gap-1 mt-20"
-          ref={ref}
-        >
+        <p className="gap-1 flex items-center" ref={ref}>
           <Rocket size={12} fill={color} stroke={color} />
           {ships}
         </p>
@@ -155,6 +171,7 @@ export function MapCarrier({
   carrierId: string;
 }) {
   const img = useImage("/carrier.png");
+  const game = useGame(scan.game);
   const carrier = scan.carriers.find((c) => c.id === carrierId);
   const owner = scan.players.find((p) => p.id === carrier?.owner);
   const [hovered, setHovered] = useState(false);
@@ -163,17 +180,74 @@ export function MapCarrier({
     (e) => e.type === "carrier" && e.id === carrierId
   );
 
-  const carrierSize = Math.max(Math.min(1, lerp(30, 80, 0 / 50) / zoom), 0.1);
+  const [localPosition, setLocalPosition] = useState(carrier?.position);
+  const [lastUpdated, setLastUpdated] = useState(
+    Date.now() - (Date.now() % 60000)
+  );
 
+  const carrierSize = Math.max(Math.min(1, lerp(30, 80, 0 / 50) / zoom), 0.1);
   const color = owner?.color || null;
+
+  const currentDestination = scan.stars.find(
+    (s) => s.id === carrier?.destination_queue[0]?.star
+  );
+
+  useEffect(() => {
+    setLocalPosition(carrier?.position);
+    setLastUpdated(Date.now() - (Date.now() % 60000));
+
+    if (!carrier || !currentDestination) {
+      return;
+    }
+
+    const distance_to_move = distance(
+      carrier.position,
+      currentDestination.position
+    );
+
+    const direction = {
+      x:
+        (currentDestination.position.x - carrier.position.x) / distance_to_move,
+      y:
+        (currentDestination.position.y - carrier.position.y) / distance_to_move,
+    };
+
+    const targetPositionNextTick =
+      distance_to_move <= game.settings.carrier_speed / 60
+        ? currentDestination.position
+        : {
+            x:
+              carrier.position.x +
+              (direction.x * game.settings.carrier_speed) / 60,
+            y:
+              carrier.position.y +
+              (direction.y * game.settings.carrier_speed) / 60,
+          };
+
+    // start a loop to Lerp the position of the carrier towards the destination
+    // const interval = setInterval(() => {
+    //   // ticks are 60 seconds apart
+    //   const t = (Date.now() - lastUpdated) / 60000;
+    //   const newPosition = positionLerp(
+    //     carrier.position,
+    //     targetPositionNextTick,
+    //     t
+    //   );
+    //   setLocalPosition(newPosition);
+    // }, 200);
+
+    // return () => clearInterval(interval);
+  }, [
+    carrier,
+    carrier?.position,
+    currentDestination,
+    game.settings.carrier_speed,
+    lastUpdated,
+  ]);
 
   if (!carrier) {
     return null;
   }
-
-  const currentDestination = scan.stars.find(
-    (s) => s.id === carrier.destination_queue[0]?.star
-  );
 
   let rotation = 0;
 
@@ -190,8 +264,8 @@ export function MapCarrier({
         <>
           <Image
             image={img}
-            x={carrier.position.x}
-            y={carrier.position.y}
+            x={localPosition.x}
+            y={localPosition.y}
             width={carrierSize}
             height={carrierSize}
             offsetX={carrierSize / 2}
@@ -204,8 +278,8 @@ export function MapCarrier({
         </>
       ) : (
         <Rect
-          x={carrier.position.x}
-          y={carrier.position.y}
+          x={localPosition.x}
+          y={localPosition.y}
           width={carrierSize}
           height={carrierSize}
           rotation={rotation}
@@ -222,8 +296,8 @@ export function MapCarrier({
         carrier.destination_queue.length > 0 && (
           <Html
             groupProps={{
-              x: carrier.position.x,
-              y: carrier.position.y,
+              x: localPosition.x,
+              y: localPosition.y + carrierSize / 1.1,
               scale: { x: 1 / zoom, y: 1 / zoom },
               listening: false,
             }}
@@ -237,7 +311,7 @@ export function MapCarrier({
             <CarrierName
               color={color}
               ships={carrier.ships ?? null}
-              from={carrier.position}
+              from={localPosition}
               to={currentDestination?.position ?? null}
             />
           </Html>
@@ -248,8 +322,8 @@ export function MapCarrier({
           {Array.from({ length: 4 }, (_, i) => (
             <Arc
               key={i}
-              x={carrier.position.x}
-              y={carrier.position.y}
+              x={localPosition.x}
+              y={localPosition.y}
               innerRadius={30 / zoom}
               outerRadius={30 / zoom / 1.1}
               angle={30}

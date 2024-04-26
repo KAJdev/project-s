@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 
 export function Accordion({
   className,
@@ -11,49 +11,47 @@ export function Accordion({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const [id] = useState(ID.create());
   return (
-    <div className={classes("flex flex-col", className)}>
-      <div
-        className={classes(
-          "flex items-center justify-between select-none",
-          open && "text-white/80",
-          !open && "text-white/60"
-        )}
-        onClick={() => onOpenChange(!open)}
-      >
-        <h3 className="font-[500] text-sm">{title}</h3>
+    <div className={classes(open && "mb-5 last:mb-0")}>
+      {title && (
         <div
           className={classes(
-            "rounded-full w-5 h-5 flex items-center justify-center duration-100",
-            open && "bg-white/10"
+            "flex gap-2 cursor-pointer select-none opacity-75 hover:opacity-100 duration-100 justify-between items-center",
+            open && "opacity-100",
+            className
           )}
+          onClick={() => onOpenChange(!open)}
         >
-          <motion.div
-            className={classes(
-              "w-2.5 h-[1px] bg-white/60 rounded-full",
-              open && "w-3.5 h-[2px] bg-white"
-            )}
-            layout="position"
-            transition={{
-              type: "spring",
-              stiffness: 2000,
-              damping: 80,
-            }}
-          />
+          {title}
         </div>
-      </div>
-      <motion.div
-        className={classes("overflow-hidden", open && "max-h-[1000px] py-2")}
-        layout="position"
-        transition={{
-          type: "spring",
-          stiffness: 2000,
-          damping: 80,
-        }}
-      >
-        <div className="flex flex-col gap-2.5">{children}</div>
-      </motion.div>
+      )}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.section
+            key="content"
+            initial="collapsed"
+            animate="open"
+            exit="collapsed"
+            className="flex flex-col gap-2"
+            variants={{
+              open: {
+                opacity: 1,
+                height: "auto",
+                marginTop: "1rem",
+              },
+              collapsed: {
+                opacity: 0,
+                height: 0,
+                marginTop: 0,
+                marginBottom: 0,
+              },
+            }}
+            transition={{ type: "spring", damping: 20, stiffness: 300 }}
+          >
+            {children}
+          </motion.section>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

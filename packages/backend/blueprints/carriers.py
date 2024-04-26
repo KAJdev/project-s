@@ -1,8 +1,11 @@
 import asyncio
+from beanie import WriteRules
 from sanic import Blueprint, Request, json, exceptions
 from sanic_ext import openapi
 from modules.db import (
+    CombatEvent,
     Destination,
+    Event,
     GameSettings,
     Message,
     Player,
@@ -286,9 +289,17 @@ async def carrier_tick(game: Game, stars: list[Star], hourly=False):
 
         og_defending_ships = defending_ships
         og_attacking_ships = attacking_ships
+        og_star_owner = star.occupier
+        attacking_members = [
+            p for p in game.members if p.id in [c.owner for c in attacking_carriers]
+        ]
+        try:
+            defending_member = next(p for p in game.members if p.id == og_star_owner)
+        except StopIteration:
+            defending_member = None
 
         while True:
-            if star.occupier:
+            if defending_ships > 0:
                 attacking_ships -= defending_weapons + 1
 
             if attacking_ships <= 0:
@@ -296,7 +307,8 @@ async def carrier_tick(game: Game, stars: list[Star], hourly=False):
                 winner = star.occupier
                 break
 
-            defending_ships -= attacking_weapons
+            if attacking_ships > 0:
+                defending_ships -= attacking_weapons
 
             if defending_ships <= 0:
                 defending_ships = 0
@@ -365,3 +377,17 @@ async def carrier_tick(game: Game, stars: list[Star], hourly=False):
                 Carrier.game == game.id,
                 In(Carrier.id, [c.id for c in attacking_carriers]),
             ).delete_many()
+
+        await Event(
+            game=game.id,
+            type="combat",
+            data=CombatEvent(
+                attacker_ships=og_attacking_ships,
+                defender_ships=og_defending_ships,
+                attacking_players=[p.id for p in attacking_members],
+                defending_players=[defending_member.id] if defending_member else [],
+                star_id=star.id,
+                star_name=star.name,
+                winner=winner,
+            ),
+        ).save()
