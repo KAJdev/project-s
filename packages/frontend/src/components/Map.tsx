@@ -214,6 +214,9 @@ export function Map({ game }: { game: Game }) {
       >
         <Entities gameId={game.id} />
       </Stage>
+      <p className="absolute text-xs right-3 bottom-3 opacity-50">
+        {process.env.CF_PAGES_COMMIT_SHA ?? "LOCAL DEV BUILD"}
+      </p>
     </div>
   );
 }
