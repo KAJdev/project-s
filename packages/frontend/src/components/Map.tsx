@@ -11,27 +11,20 @@ import { MapCarrier } from "./Map/Carrier";
 import { CarrierLines } from "./Map/CarrierLines";
 import { distance } from "@/lib/utils";
 
-function Stars({
-  scan,
-  zoom,
-  map,
-}: {
-  scan: Scan | null;
-  zoom: number;
-  map: MapState;
-}) {
+function Entities({ gameId }: { gameId: ID }) {
+  const scan = useScan(gameId);
+  const zoom = useZoom();
+  const map = mapState();
   return useMemo(
     () => (
       <>
-        <Layer>
+        <Layer listening={false}>
           {scan?.stars.map((star) => (
             <HyperspaceCircle
-              key={keys(star.id, "hyperscape")}
+              key={keys(star.id, "hyperspace")}
               starId={star.id}
             />
           ))}
-        </Layer>
-        <Layer>
           {scan?.stars.map((star) => (
             <OuterScanCircle
               key={keys(star.id, "outerscan")}
@@ -59,48 +52,18 @@ function Stars({
               selectedEntities={map.selected}
             />
           ))}
+          {scan?.carriers.map((carrier) => (
+            <MapCarrier
+              key={carrier.id}
+              carrierId={carrier.id}
+              zoom={zoom}
+              selectedEntities={map.selected}
+            />
+          ))}
         </Layer>
       </>
     ),
     [map.flightPlanningFor, map.selected, scan?.carriers, scan?.stars, zoom]
-  );
-}
-
-function Carriers({
-  scan,
-  zoom,
-  map,
-}: {
-  scan: Scan | null;
-  zoom: number;
-  map: MapState;
-}) {
-  return useMemo(
-    () => (
-      <Layer>
-        {scan?.carriers.map((carrier) => (
-          <MapCarrier
-            key={carrier.id}
-            carrierId={carrier.id}
-            zoom={zoom}
-            selectedEntities={map.selected}
-          />
-        ))}
-      </Layer>
-    ),
-    [map.selected, scan?.carriers, zoom]
-  );
-}
-
-function Entities({ gameId }: { gameId: ID }) {
-  const scan = useScan(gameId);
-  const zoom = useZoom();
-  const map = mapState();
-  return (
-    <>
-      <Stars scan={scan} zoom={zoom} map={map} />
-      <Carriers scan={scan} zoom={zoom} map={map} />
-    </>
   );
 }
 
