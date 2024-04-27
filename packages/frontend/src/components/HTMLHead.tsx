@@ -12,7 +12,10 @@ export function HTMLHead({
       <title>{title + (subtitle ? " - " + subtitle : "")}</title>
       <meta name="description" content="Project S" />
       <link rel="icon" href="/favicon.ico" />
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+      />
       <meta name="theme-color" content="#081118" />
     </Head>
   );

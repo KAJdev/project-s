@@ -91,30 +91,31 @@ export function GameLayout() {
             </>
           )}
 
-          {state === GameState.Ready &&
-            (game.owner === user?.id ? (
-              <Button
-                variant="vibrant"
-                className="mt-5"
-                loading={startLoading}
-                onClick={() => {
-                  setStartLoading(true);
-                  startGame(gameId)
-                    .then(() => {
-                      setStartLoading(false);
-                      fetchGames();
-                      fetchScan(gameId);
-                    })
-                    .catch(() => {
-                      setStartLoading(false);
-                    });
-                }}
-              >
-                Start Game
-              </Button>
-            ) : (
-              <p className="opacity-20 text-sm">Waiting for game to start</p>
-            ))}
+          {state !== GameState.Ready && game.owner !== user?.id && (
+            <p className="opacity-20 text-sm">Waiting for game to start</p>
+          )}
+
+          {game.owner === user?.id && (
+            <Button
+              variant={state === GameState.Ready ? "vibrant" : "secondary"}
+              className="mt-5"
+              loading={startLoading}
+              onClick={() => {
+                setStartLoading(true);
+                startGame(gameId)
+                  .then(() => {
+                    setStartLoading(false);
+                    fetchGames();
+                    fetchScan(gameId);
+                  })
+                  .catch(() => {
+                    setStartLoading(false);
+                  });
+              }}
+            >
+              {state === GameState.Ready ? "Start Game" : "Start Anyway"}
+            </Button>
+          )}
         </div>
       </div>
     </div>
