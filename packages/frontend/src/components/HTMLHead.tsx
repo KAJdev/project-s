@@ -9,10 +9,7 @@ export function HTMLHead({
 }) {
   return (
     <Head>
-      <title>
-        {title}
-        {subtitle ? " - " + subtitle : ""}
-      </title>
+      <title>{title + (subtitle ? " - " + subtitle : "")}</title>
       <meta name="description" content="Project S" />
       <link rel="icon" href="/favicon.ico" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
