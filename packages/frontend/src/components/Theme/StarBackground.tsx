@@ -4,10 +4,12 @@ export function StarBackground({
   opacity = 1,
   centerAdapt,
   count = 100,
+  move = true,
 }: {
   opacity?: number;
   centerAdapt?: boolean;
   count?: number;
+  move?: boolean;
 }) {
   return (
     <div
@@ -15,7 +17,7 @@ export function StarBackground({
       style={{ opacity }}
     >
       {Array.from({ length: count }).map((_, i) => (
-        <Star key={i} index={i} centerAdapt={centerAdapt} />
+        <Star key={i} index={i} centerAdapt={centerAdapt} move={move} />
       ))}
     </div>
   );

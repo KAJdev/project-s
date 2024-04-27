@@ -150,7 +150,7 @@ export function Research() {
   const game = useGame(scan?.game);
   if (!self) return null;
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 p-4">
       {TECHNOLOGIES.map((technology) => (
         <ResearchItem
           key={technology.id}

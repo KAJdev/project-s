@@ -40,7 +40,12 @@ function CarrierView({
       onOpenChange={setOpen}
       title={
         <>
-          <h1 className="text-lg">{carrier.name}</h1>
+          <div className="flex flex-col">
+            <h1 className="text-lg">{carrier.name}</h1>
+            <p className="text-xs" style={{ color: owner.color }}>
+              {owner.name}
+            </p>
+          </div>
           <div className="flex items-center gap-5">
             <div className="flex items-center gap-1">
               <Rocket size={14} fill={owner.color} stroke={owner.color} />
@@ -57,11 +62,6 @@ function CarrierView({
         </>
       }
     >
-      <Field label="Owner">
-        <div className="flex gap-2 items-center" style={{ color: owner.color }}>
-          <p>{owner.name}</p>
-        </div>
-      </Field>
       {owner.id === self?.id && <DestinationGraph carrier={carrier} />}
     </Accordion>
   );
@@ -76,7 +76,7 @@ export function CarrierInspect({ carrierIds }: { carrierIds: ID[] }) {
   if (carriers.length === 0) return null;
 
   return (
-    <Inspector>
+    <Inspector draggable={false} dividerText="Carriers">
       <div className="flex flex-col gap-3">
         {carriers.map((carrier, i) => (
           <CarrierView

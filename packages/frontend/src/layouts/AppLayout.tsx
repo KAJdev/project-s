@@ -13,10 +13,12 @@ import { Sparkle } from "lucide-react";
 import { Galaxy } from "@/components/Icons/Galaxy";
 import { NewGameLayout } from "./NewGameLayout";
 import { StarBackground } from "@/components/Theme/StarBackground";
+import { useGame } from "@/lib/games";
 
 function AppElement() {
   const isReady = useGateway();
   const { gameId } = useParams();
+  const game = useGame(gameId);
   useFetchUser();
   return (
     <PageComponent>
@@ -25,7 +27,7 @@ function AppElement() {
       <div
         className={classes(
           "w-full h-full absolute z-[100] bg-black opacity-100 duration-200 flex items-center justify-center",
-          isReady
+          isReady && ((gameId && game) || !gameId)
             ? "opacity-0 pointer-events-none"
             : "opacity-100 pointer-events-auto"
         )}

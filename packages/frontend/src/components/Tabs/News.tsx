@@ -1,3 +1,3 @@
 export function News() {
-  return <>NEWS!!!</>;
+  return <div className="p-4">Stay tuned...</div>;
 }

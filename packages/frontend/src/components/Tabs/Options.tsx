@@ -9,7 +9,7 @@ export function Options() {
   const game = useGame(scan?.game);
 
   return (
-    <>
+    <div className="flex flex-col gap-2 p-4">
       {game.owner === self?.user && (
         <Field label="Admin">
           <Button onClick={() => restartGame(game.id).then(() => fetchGames())}>
@@ -17,6 +17,6 @@ export function Options() {
           </Button>
         </Field>
       )}
-    </>
+    </div>
   );
 }

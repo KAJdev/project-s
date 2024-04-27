@@ -65,11 +65,11 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  @apply dark:bg-transparent;
+  @apply dark:bg-white/10;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply rounded-full bg-zinc-300 dark:bg-zinc-700;
+  @apply bg-black/10 dark:bg-white/30
 }
 
 .cl-card {

@@ -37,7 +37,7 @@ export function GameLayout() {
   }, [state]);
 
   if (!gameId || !game) {
-    return <p>No game...</p>;
+    return null;
   }
 
   if (isJoinable) {
@@ -47,7 +47,7 @@ export function GameLayout() {
   if (state === GameState.Running) {
     return (
       <>
-        <div className="w-screen h-screen flex justify-between sm:p-8 absolute z-10 pointer-events-none">
+        <div className="w-screen max-h-full h-full min-h-0 flex justify-between sm:p-8 absolute z-10 pointer-events-none">
           <LeftInspector />
         </div>
         <Map game={game} />

@@ -218,8 +218,10 @@ export function StarInspect({ starId }: { starId: ID }) {
   return (
     <Inspector
       title={star.name}
-      subtitle="Star"
+      subtitle={occupier?.name ?? "Unoccupied"}
       nothingMessage="No star selected"
+      draggable={false}
+      dividerText="Star Information"
     >
       {exists(star.resources) && (
         <>
