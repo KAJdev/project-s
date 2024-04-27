@@ -56,14 +56,14 @@ export function GameLayout() {
   }
 
   return (
-    <div className="w-screen h-screen flex items-center justify-center">
-      <div className="max-w-[35rem] w-full primary-panel-solid p-4 flex flex-col gap-5">
+    <div className="w-dvw min-h-dvh flex items-end sm:items-center justify-center">
+      <div className="max-w-[35rem] w-full h-full sm:h-fit primary-panel-solid p-4 flex flex-col gap-5">
         <Link to="/app">
           <Button variant="nobg" icon={<ArrowLeft size={14} />}>
             Back to Galaxy
           </Button>
         </Link>
-        <div className="my-24 w-full flex flex-col items-center justify-center gap-3 select-none">
+        <div className="my-24 w-full h-full sm:h-fit flex flex-col items-center justify-center gap-3 select-none">
           <motion.div
             initial={{ rotate: 360 }}
             animate={{ rotate: 0 }}

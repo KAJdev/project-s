@@ -1,7 +1,9 @@
 /* eslint-disable @next/next/no-img-element */
+import { HTMLHead } from "@/components/HTMLHead";
 import { Button } from "@/components/Theme/Button";
 import { StarBackground } from "@/components/Theme/StarBackground";
 import { motion } from "framer-motion";
+import Head from "next/head";
 
 const MOTDS = [
   "This is the space game you've been looking for.",
@@ -21,9 +23,11 @@ export default function Home() {
   return (
     <div
       className={classes(
-        "w-screen h-screen flex gap-3 justify-center items-center flex-col select-none"
+        "w-full h-dvh flex gap-3 justify-center items-center flex-col select-none"
       )}
     >
+      <HTMLHead subtitle="A Space Game" />
+
       <StarBackground centerAdapt />
 
       <h1 className="text-[5rem] opacity-75">Project S</h1>

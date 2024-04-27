@@ -61,33 +61,36 @@ export function useFlightPlanningInfo(starId: ID): {
   const flightPlanningFor = mapState((s) => s.flightPlanningFor);
   const carrier = useCarrier(flightPlanningFor);
   const player = usePlayer();
-  if (!flightPlanningFor || !carrier || !player)
-    return {
-      outsideRange: false,
-      isTarget: false,
-      isLastTarget: false,
-    };
 
-  const latestDestination =
-    carrier.destination_queue[carrier.destination_queue.length - 1];
-  const lastDestinationStar = scanStore
-    .getState()
-    .scan?.stars.find((s) => s.id === latestDestination?.star);
-  const thisStar = scanStore
-    .getState()
-    .scan?.stars.find((s) => s.id === starId);
-  if (!thisStar)
-    return {
-      outsideRange: false,
-      isTarget: false,
-      isLastTarget: false,
-    };
+  return useMemo(() => {
+    if (!flightPlanningFor || !carrier || !player)
+      return {
+        outsideRange: false,
+        isTarget: false,
+        isLastTarget: false,
+      };
 
-  return {
-    outsideRange:
-      distance(thisStar.position, (lastDestinationStar ?? carrier).position) >
-      getHyperSpaceDistance(player),
-    isTarget: carrier.destination_queue.some((d) => d.star === starId),
-    isLastTarget: latestDestination?.star === starId,
-  };
+    const latestDestination =
+      carrier.destination_queue[carrier.destination_queue.length - 1];
+    const lastDestinationStar = scanStore
+      .getState()
+      .scan?.stars.find((s) => s.id === latestDestination?.star);
+    const thisStar = scanStore
+      .getState()
+      .scan?.stars.find((s) => s.id === starId);
+    if (!thisStar)
+      return {
+        outsideRange: false,
+        isTarget: false,
+        isLastTarget: false,
+      };
+
+    return {
+      outsideRange:
+        distance(thisStar.position, (lastDestinationStar ?? carrier).position) >
+        getHyperSpaceDistance(player),
+      isTarget: carrier.destination_queue.some((d: any) => d.star === starId),
+      isLastTarget: latestDestination?.star === starId,
+    };
+  }, [flightPlanningFor, carrier, player, starId]);
 }

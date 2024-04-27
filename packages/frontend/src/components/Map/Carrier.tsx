@@ -2,7 +2,7 @@
 import { darken, hexToHSV, hexToRgb } from "@/lib/color";
 import { useImage } from "@/lib/image";
 import { mapState } from "@/lib/map";
-import { Scan, getETA } from "@/lib/scan";
+import { Carrier, Scan, getETA, scanStore } from "@/lib/scan";
 import { Html } from "react-konva-utils";
 import { Arc, Circle, Image, Rect } from "react-konva";
 import { Rocket } from "lucide-react";
@@ -163,24 +163,26 @@ function RotatingArcs({
   return arcs;
 }
 
-export function MapCarrier({
-  scan,
-  carrierId,
-}: {
-  scan: Scan;
-  carrierId: string;
-}) {
+export function MapCarrier({ carrierId }: { carrierId: string }) {
   const img = useImage("/carrier.png");
-  const game = useGame(scan.game);
-  const carrier = scan.carriers.find((c) => c.id === carrierId);
-  const owner = scan.players.find((p) => p.id === carrier?.owner);
+  const scan = scanStore((state) => state.scan);
+  const game = useGame(scan?.game);
+  const carrier = scan?.carriers.find((c) => c.id === carrierId);
+  const owner = scan?.players.find((p) => p.id === carrier?.owner);
   const [hovered, setHovered] = useState(false);
   const [zoom, selectedEntities] = mapState((s) => [s.zoom, s.selected]);
   const isSelected = selectedEntities.some(
     (e) => e.type === "carrier" && e.id === carrierId
   );
 
-  const [localPosition, setLocalPosition] = useState(carrier?.position);
+  const [localPosition, setLocalPosition] = useState<
+    Carrier["position"] | null
+  >(
+    carrier?.position ?? {
+      x: 0,
+      y: 0,
+    }
+  );
   const [lastUpdated, setLastUpdated] = useState(
     Date.now() - (Date.now() % 60000)
   );
@@ -188,7 +190,7 @@ export function MapCarrier({
   const carrierSize = Math.max(Math.min(1, lerp(30, 80, 0 / 50) / zoom), 0.1);
   const color = owner?.color || null;
 
-  const currentDestination = scan.stars.find(
+  const currentDestination = scan?.stars.find(
     (s) => s.id === carrier?.destination_queue[0]?.star
   );
 

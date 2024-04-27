@@ -327,7 +327,10 @@ export function useScan(gameId: ID | undefined) {
 export function usePlayer() {
   const scan = scanStore((state) => state.scan);
   const user = useSelf();
-  return scan?.players.find((p) => p.user === user?.id);
+  return useMemo(
+    () => scan?.players.find((p) => p.user === user?.id),
+    [scan, user]
+  );
 }
 
 export function useSpecificPlayer(playerId: ID | undefined | null) {
@@ -354,7 +357,10 @@ export function useStars(ids: ID[]) {
 
 export function useCarrier(carrierId: ID | undefined | null) {
   const scan = scanStore((state) => state.scan);
-  return scan?.carriers.find((c) => c.id === carrierId);
+  return useMemo(
+    () => scan?.carriers.find((c) => c.id === carrierId),
+    [scan, carrierId]
+  );
 }
 
 export function useCarriers(ids: ID[]) {
@@ -365,13 +371,15 @@ export function useCarriers(ids: ID[]) {
 export function useCarriersAround(
   position: { x: number; y: number } | undefined,
   d: number = 0.2
-) {
-  const scan = scanStore((state) => state.scan);
-  if (!position) return [];
-  return (
-    scan?.carriers.filter((c) => distance(c.position, position) <= d) ||
-    ([] as Carrier[])
-  );
+): Carrier[] {
+  const carriers = scanStore((state) => state.scan?.carriers);
+  return useMemo(() => {
+    if (!position) return [];
+    return (
+      carriers?.filter((c) => distance(c.position, position) <= d) ||
+      ([] as Carrier[])
+    );
+  }, [carriers, position, d]);
 }
 
 export function getStarCosts(star: Star, player: Player) {

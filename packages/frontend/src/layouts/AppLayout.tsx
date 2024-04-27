@@ -7,7 +7,7 @@ import { ChannelLayout } from "./ChannelLayout";
 import { useToken } from "@/lib/token";
 import { useRouter } from "next/router";
 import { useFetchUser } from "@/lib/users";
-import { GalaxyLayout } from "./GalaxyLayout";
+import { HomePage } from "./HomePage";
 import { GameLayout } from "./GameLayout";
 import { Sparkle } from "lucide-react";
 import { Galaxy } from "@/components/Icons/Galaxy";
@@ -52,11 +52,11 @@ export function AppLayout() {
       children: [
         {
           index: true,
-          element: <GalaxyLayout />,
+          element: <HomePage />,
         },
         {
           path: "games",
-          element: <GalaxyLayout />,
+          element: <HomePage />,
         },
         {
           path: "games/:gameId",

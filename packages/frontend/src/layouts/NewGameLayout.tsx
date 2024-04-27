@@ -23,7 +23,7 @@ export function NewGameLayout() {
   const [loading, setLoading] = useState(false);
 
   return (
-    <div className="w-screen h-screen flex items-center justify-center">
+    <div className="w-dvw min-h-dvh flex items-end sm:items-center justify-center">
       <div className="max-w-[35rem] w-full primary-panel-solid p-4 gap-5 flex flex-col">
         <div className="flex justify-between items-center">
           <h1 className="text-xl">Create Game</h1>

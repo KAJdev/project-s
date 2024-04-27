@@ -1,5 +1,11 @@
 import { authFetch } from "./authenticatedFetch";
 
+export type APIError = {
+  status: number;
+  message: string;
+  description: string;
+};
+
 export async function request<T>(
   url: `/${string}`,
   options?: Partial<{
@@ -7,6 +13,7 @@ export async function request<T>(
     params?: Record<string, string>;
     body?: Record<string, any>;
     version: number;
+    throwErrors: boolean;
   }>
 ): Promise<T | null> {
   const { method = "GET", params, body = null, version = 1 } = options ?? {};
@@ -16,8 +23,10 @@ export async function request<T>(
     queryString ? `?${queryString}` : ""
   }`;
 
+  let response: Response;
+  let data: string | null = null;
   try {
-    const response = await authFetch(urlWithParams, {
+    response = await authFetch(urlWithParams, {
       method,
       headers: {
         "Content-Type": "application/json",
@@ -28,18 +37,30 @@ export async function request<T>(
         : {}),
     });
 
-    const data = await response.text();
-
-    if (!response.ok) {
-      console.error(data);
-      return null;
-    }
-
-    const parsed = JSON.parse(data) as T;
-
-    return parsed;
+    data = await response.text();
   } catch (e) {
     console.error(e);
     return null;
   }
+
+  if (!response.ok) {
+    // attempt to get an APIError
+    let error: APIError;
+    try {
+      error = JSON.parse(data);
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+
+    if (options?.throwErrors) {
+      throw new Error(error.message);
+    } else {
+      return null;
+    }
+  }
+
+  const parsed = JSON.parse(data) as T;
+
+  return parsed;
 }

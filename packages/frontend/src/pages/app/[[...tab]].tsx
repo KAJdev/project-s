@@ -1,3 +1,4 @@
+import { HTMLHead } from "@/components/HTMLHead";
 import { Page as PageComponent } from "@/components/Theme/Page";
 import { AppLayout } from "@/layouts/AppLayout";
 import Head from "next/head";
@@ -12,13 +13,7 @@ export default function Page() {
 
   return (
     <>
-      <Head>
-        <title>Project S</title>
-        <meta name="description" content="Project S" />
-        <link rel="icon" href="/favicon.ico" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#081118" />
-      </Head>
+      <HTMLHead />
       {!isSSR ? (
         <BrowserRouter>
           <AppLayout />

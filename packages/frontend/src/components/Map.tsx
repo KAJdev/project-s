@@ -19,7 +19,6 @@ function Stars({ scan }: { scan: Scan | null }) {
           {scan?.stars.map((star) => (
             <HyperspaceCircle
               key={keys(star.id, "hyperscape")}
-              scan={scan}
               starId={star.id}
             />
           ))}
@@ -28,29 +27,28 @@ function Stars({ scan }: { scan: Scan | null }) {
           {scan?.stars.map((star) => (
             <OuterScanCircle
               key={keys(star.id, "outerscan")}
-              scan={scan}
               starId={star.id}
             />
           ))}
           {scan?.stars.map((star) => (
             <InnerScanCircle
               key={keys(star.id, "innerscan")}
-              scan={scan}
               starId={star.id}
             />
           ))}
         </Layer>
         <Layer>
           {scan?.carriers.map((carrier) => (
-            <CarrierLines key={carrier.id} scan={scan} carrierId={carrier.id} />
+            <CarrierLines key={carrier.id} carrierId={carrier.id} />
           ))}
           {scan?.stars.map((star) => (
-            <MapStar key={star.id} scan={scan} starId={star.id} />
+            <MapStar key={star.id} starId={star.id} />
           ))}
         </Layer>
       </>
     ),
-    [scan]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [scan?.stars.length, scan?.carriers.length]
   );
 }
 
@@ -59,11 +57,12 @@ function Carriers({ scan }: { scan: Scan | null }) {
     () => (
       <Layer>
         {scan?.carriers.map((carrier) => (
-          <MapCarrier key={carrier.id} scan={scan} carrierId={carrier.id} />
+          <MapCarrier key={carrier.id} carrierId={carrier.id} />
         ))}
       </Layer>
     ),
-    [scan]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [scan?.carriers.length]
   );
 }
 
@@ -164,7 +163,7 @@ export function Map({ game }: { game: Game }) {
     [camera.x, camera.y, scan, zoom]
   );
 
-  const onMouseMove = useCallback(
+  const onPointerMove = useCallback(
     (e: any) => {
       if (mapState.getState().panning) {
         mapState.getState().setCamera({
@@ -176,7 +175,7 @@ export function Map({ game }: { game: Game }) {
     [camera.x, camera.y]
   );
 
-  const onMouseDown = useCallback((e: any) => {
+  const onPointerDown = useCallback((e: any) => {
     if (e.evt.button === 0) {
       const pointer = e.target.getStage()!.getPointerPosition()!;
       lastPointerDownPosition.current = pointer;
@@ -197,10 +196,7 @@ export function Map({ game }: { game: Game }) {
   }, [panning]);
 
   return (
-    <div
-      ref={parentRef}
-      className="w-screen h-screen overflow-hidden bg-[#081118]"
-    >
+    <div ref={parentRef} className="w-dvw h-dvh overflow-hidden bg-[#081118]">
       <Stage
         width={width}
         ref={stage}
@@ -209,10 +205,11 @@ export function Map({ game }: { game: Game }) {
         x={camera.x}
         y={camera.y}
         onMouseUp={onMouseUp}
-        onMouseMove={onMouseMove}
-        onMouseDown={onMouseDown}
+        onPointerMove={onPointerMove}
+        onPointerDown={onPointerDown}
         onMouseLeave={onMouseLeave}
         onPointerUp={onPointerUp}
+        onTap={onPointerUp}
       >
         <Entities gameId={game.id} />
       </Stage>

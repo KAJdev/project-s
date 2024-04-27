@@ -2,13 +2,12 @@ import { request } from "@/lib/api";
 import { tokenStore } from "@/lib/token";
 import { User, userStore } from "@/lib/users";
 import { useRouter } from "next/router";
-import { Inter } from "next/font/google";
 import { Body, Title, TopBar } from "@/components/Theme/Modal";
 import { Input } from "@/components/Theme/Input";
 import { Button } from "@/components/Theme/Button";
 import Link from "next/link";
-
-const inter = Inter({ subsets: ["latin"] });
+import { StarBackground } from "@/components/Theme/StarBackground";
+import { HTMLHead } from "@/components/HTMLHead";
 
 export function AuthLayout({ mode = "login" }: { mode?: "login" | "signup" }) {
   const router = useRouter();
@@ -26,6 +25,7 @@ export function AuthLayout({ mode = "login" }: { mode?: "login" | "signup" }) {
       {
         method: "POST",
         body: { username, password, ...(mode === "signup" ? { email } : {}) },
+        throwErrors: true,
       }
     ).catch((e) => {
       setError(e.message);
@@ -53,10 +53,11 @@ export function AuthLayout({ mode = "login" }: { mode?: "login" | "signup" }) {
   return (
     <div
       className={classes(
-        "w-screen h-screen flex items-center justify-center",
-        inter.className
+        "w-dvw h-dvh flex items-end sm:items-center justify-center"
       )}
     >
+      <HTMLHead subtitle={mode === "login" ? "Login" : "Sign Up"} />
+      <StarBackground centerAdapt />
       <div className="max-w-[35rem] w-full primary-panel-solid p-2">
         <TopBar border={false}>
           <Title>

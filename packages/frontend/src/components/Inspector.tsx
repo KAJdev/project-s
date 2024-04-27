@@ -123,7 +123,7 @@ export function Field({
   className,
   variant = "horizontal",
 }: {
-  label: string;
+  label?: string;
   sublabel?: string;
   variant?: "horizontal" | "box";
 } & StyleableWithChildren) {

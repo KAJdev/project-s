@@ -47,7 +47,7 @@ export function JoinGame({
   if (!game) return <></>;
 
   return (
-    <div className="w-screen h-screen flex items-center justify-center">
+    <div className="w-dvw min-h-dvh flex items-end sm:items-center justify-center">
       <div className="max-w-[35rem] w-full primary-panel-solid p-4 gap-5 flex flex-col">
         <div className="flex flex-col gap-1">
           <h1 className="text-xl">Join {game.name}</h1>

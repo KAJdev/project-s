@@ -31,7 +31,7 @@ function CarrierView({
   defaultOpen?: boolean;
   index: number;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useState(defaultOpen || false);
   const self = usePlayer();
 
   return (
@@ -69,7 +69,6 @@ function CarrierView({
 
 export function CarrierInspect({ carrierIds }: { carrierIds: ID[] }) {
   const carriers = useCarriers(carrierIds);
-  const player = usePlayer();
   const players = usePlayers(carriers?.map((c) => c.owner));
   const flightPlanningFor = mapState((s) => s.flightPlanningFor);
 

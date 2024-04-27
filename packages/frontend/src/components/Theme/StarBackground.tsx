@@ -13,7 +13,7 @@ export function StarBackground({
 }) {
   return (
     <div
-      className="absolute w-screen h-screen overflow-hidden pointer-events-none -z-10"
+      className="absolute w-screen h-dvh overflow-hidden pointer-events-none -z-10"
       style={{ opacity }}
     >
       {Array.from({ length: count }).map((_, i) => (

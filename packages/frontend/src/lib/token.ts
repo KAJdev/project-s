@@ -25,3 +25,7 @@ export function useToken() {
 export function getToken() {
   return tokenStore.getState().token;
 }
+
+export function deleteToken() {
+  tokenStore.getState().setToken(null);
+}

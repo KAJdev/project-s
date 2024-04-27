@@ -2,7 +2,12 @@
 import { darken, hexToHSV, hexToRgb } from "@/lib/color";
 import { useImage } from "@/lib/image";
 import { mapState, useFlightPlanningInfo } from "@/lib/map";
-import { Scan, addToCarrierDestination, useCarriersAround } from "@/lib/scan";
+import {
+  Scan,
+  addToCarrierDestination,
+  scanStore,
+  useCarriersAround,
+} from "@/lib/scan";
 import { Html } from "react-konva-utils";
 import { Arc, Circle, Image } from "react-konva";
 import { Rocket } from "lucide-react";
@@ -157,50 +162,84 @@ function RotatingArcs({
   return arcs;
 }
 
-export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
+export function MapStar({ starId }: { starId: ID }) {
+  const scan = scanStore((state) => state.scan);
+  const star = scan?.stars.find((s) => s.id === starId);
   const img = useImage("/star.png");
   const imgRef = React.useRef(null);
-  const star = scan.stars.find((s) => s.id === starId);
-  const owner = scan.players.find((p) => p.id === star?.occupier);
   const [hovered, setHovered] = useState(false);
+  const carriers = useCarriersAround(star?.position, 0.1);
+  const flightPlanInfo = useFlightPlanningInfo(starId);
   const [zoom, selectedEntities, flightPlanningFor] = mapState((s) => [
     s.zoom,
     s.selected,
     s.flightPlanningFor,
   ]);
-  const isSelected = selectedEntities.some(
-    (e) => e.type === "star" && e.id === starId
-  );
 
-  const carriers = useCarriersAround(star?.position, 0.1);
-  const flightPlanInfo = useFlightPlanningInfo(starId);
-  const totalShips =
-    (star?.ships ?? 0) +
-    carriers
-      .filter((c) => c.owner === star?.occupier)
-      .reduce((acc, c) => acc + c.ships, 0);
+  return useMemo(() => {
+    if (!star) {
+      return null;
+    }
 
-  const starSize = Math.max(Math.min(0.5, lerp(30, 80, 0 / 50) / zoom), 0.1);
+    const owner = scan?.players.find((p) => p.id === star?.occupier);
+    const isSelected = selectedEntities.some(
+      (e) => e.type === "star" && e.id === starId
+    );
 
-  const color = owner?.color || null;
+    const totalShips =
+      (star?.ships ?? 0) +
+      carriers
+        .filter((c) => c.owner === star?.occupier)
+        .reduce((acc, c) => acc + c.ships, 0);
 
-  if (!star) {
-    return null;
-  }
+    const starSize = Math.max(Math.min(0.5, lerp(30, 80, 0 / 50) / zoom), 0.1);
 
-  return (
-    <>
-      {zoom > 40 && img ? (
-        <>
-          <Image
-            image={img}
-            ref={imgRef}
-            x={star.position.x - starSize / 2}
-            y={star.position.y - starSize / 2}
-            width={starSize}
-            height={starSize}
+    const color = owner?.color || null;
+
+    return (
+      <>
+        {zoom > 40 && img ? (
+          <>
+            <Image
+              image={img}
+              ref={imgRef}
+              x={star.position.x - starSize / 2}
+              y={star.position.y - starSize / 2}
+              width={starSize}
+              height={starSize}
+              onMouseEnter={() => setHovered(true)}
+              onMouseLeave={() => setHovered(false)}
+              opacity={flightPlanInfo.outsideRange ? 0.2 : 1}
+              listening={!flightPlanInfo.outsideRange}
+              onMouseUp={(e) => {
+                if (flightPlanningFor) {
+                  addToCarrierDestination(starId);
+                  e.cancelBubble = true;
+                }
+              }}
+            />
+            {color && (
+              <Arc
+                x={star.position.x}
+                y={star.position.y}
+                innerRadius={starSize / 2}
+                outerRadius={starSize / 1.6}
+                angle={360}
+                fill={color}
+                opacity={0.5}
+                listening={false}
+                visible={!flightPlanInfo.outsideRange}
+              />
+            )}
+          </>
+        ) : (
+          <Circle
+            x={star.position.x}
+            y={star.position.y}
+            radius={starSize / 2}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
+            fill={owner?.color || "gray"}
             opacity={flightPlanInfo.outsideRange ? 0.2 : 1}
             listening={!flightPlanInfo.outsideRange}
             onMouseUp={(e) => {
@@ -210,100 +249,81 @@ export function MapStar({ scan, starId }: { scan: Scan; starId: ID }) {
               }
             }}
           />
-          {color && (
-            <Arc
-              x={star.position.x}
-              y={star.position.y}
-              innerRadius={starSize / 2}
-              outerRadius={starSize / 1.6}
-              angle={360}
-              fill={color}
-              opacity={0.5}
-              listening={false}
-              visible={!flightPlanInfo.outsideRange}
-            />
-          )}
-        </>
-      ) : (
-        <Circle
-          x={star.position.x}
-          y={star.position.y}
-          radius={starSize / 2}
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
-          fill={owner?.color || "gray"}
-          opacity={flightPlanInfo.outsideRange ? 0.2 : 1}
-          listening={!flightPlanInfo.outsideRange}
-          onMouseUp={(e) => {
-            if (flightPlanningFor) {
-              addToCarrierDestination(starId);
-              e.cancelBubble = true;
-            }
-          }}
-        />
-      )}
+        )}
 
-      {(hovered || isSelected) && !flightPlanInfo.outsideRange && (
-        <RotatingArcs
-          x={star.position.x}
-          y={star.position.y}
-          starSize={starSize}
-          zoom={zoom}
-          speed={1}
-        />
-      )}
-
-      {(hovered || isSelected || zoom > 50) && (
-        <Html
-          groupProps={{
-            x: star.position.x,
-            y: star.position.y + starSize / 1.1,
-            scale: { x: 1 / zoom, y: 1 / zoom },
-            listening: false,
-          }}
-          divProps={{
-            style: {
-              pointerEvents: "none",
-              zIndex: isSelected || hovered ? 100 : 0,
-              opacity: flightPlanInfo.outsideRange ? 0.2 : 1,
-            },
-          }}
-        >
-          <StarName
-            name={zoom > 175 ? star.name : null}
-            color={color}
-            ships={exists(star.ships) ? totalShips : null}
-            resources={
-              star.resources && zoom > 75
-                ? {
-                    economy: star.economy!,
-                    industry: star.industry!,
-                    science: star.science!,
-                  }
-                : null
-            }
+        {(hovered || isSelected) && !flightPlanInfo.outsideRange && (
+          <RotatingArcs
+            x={star.position.x}
+            y={star.position.y}
+            starSize={starSize}
+            zoom={zoom}
+            speed={1}
           />
-        </Html>
-      )}
+        )}
 
-      {isSelected && (
-        <>
-          {Array.from({ length: 4 }, (_, i) => (
-            <Arc
-              key={i}
-              x={star.position.x}
-              y={star.position.y}
-              innerRadius={30 / zoom}
-              outerRadius={30 / zoom / 1.1}
-              angle={30}
-              rotation={i * 90 + 30}
-              fill="white"
-              opacity={1}
-              listening={false}
+        {(hovered || isSelected || zoom > 50) && (
+          <Html
+            groupProps={{
+              x: star.position.x,
+              y: star.position.y + starSize / 1.1,
+              scale: { x: 1 / zoom, y: 1 / zoom },
+              listening: false,
+            }}
+            divProps={{
+              style: {
+                pointerEvents: "none",
+                zIndex: isSelected || hovered ? 100 : 0,
+                opacity: flightPlanInfo.outsideRange ? 0.2 : 1,
+              },
+            }}
+          >
+            <StarName
+              name={zoom > 175 ? star.name : null}
+              color={color}
+              ships={exists(star.ships) ? totalShips : null}
+              resources={
+                star.resources && zoom > 75
+                  ? {
+                      economy: star.economy!,
+                      industry: star.industry!,
+                      science: star.science!,
+                    }
+                  : null
+              }
             />
-          ))}
-        </>
-      )}
-    </>
-  );
+          </Html>
+        )}
+
+        {isSelected && (
+          <>
+            {Array.from({ length: 4 }, (_, i) => (
+              <Arc
+                key={i}
+                x={star.position.x}
+                y={star.position.y}
+                innerRadius={30 / zoom}
+                outerRadius={30 / zoom / 1.1}
+                angle={30}
+                rotation={i * 90 + 30}
+                fill="white"
+                opacity={1}
+                listening={false}
+              />
+            ))}
+          </>
+        )}
+      </>
+    );
+  }, [
+    carriers,
+    flightPlanInfo.outsideRange,
+    flightPlanningFor,
+    hovered,
+    img,
+    scan?.players,
+    selectedEntities,
+    star,
+    starId,
+    zoom,
+  ]);
 }

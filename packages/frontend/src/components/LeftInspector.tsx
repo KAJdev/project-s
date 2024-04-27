@@ -39,14 +39,11 @@ function TabButton({
 }
 
 export function LeftInspector() {
-  const { selected, flightPlanningFor } = mapState();
-  const [tab, setTab] = useState<string>("research");
+  const selected = mapState((s) => s.selected);
+  const [tab, setTab] = useState<string | null>("research");
 
   const firstStar = selected.find((s) => s.type === "star");
   const carriers = selected.filter((s) => s.type === "carrier");
-  const firstStarName = scanStore
-    .getState()
-    ?.scan?.stars.find((s) => s.id === firstStar?.id)?.name;
 
   return (
     <Inspector noPadding draggable={false} nothingMessage={null} parent>
