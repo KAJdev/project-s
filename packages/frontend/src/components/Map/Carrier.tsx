@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/alt-text */
 import { darken, hexToHSV, hexToRgb } from "@/lib/color";
 import { useImage } from "@/lib/image";
-import { mapState } from "@/lib/map";
+import { SelectionObject, mapState, useZoom } from "@/lib/map";
 import { Carrier, Scan, getETA, scanStore } from "@/lib/scan";
 import { Html } from "react-konva-utils";
 import { Arc, Circle, Image, Rect } from "react-konva";
@@ -163,14 +163,21 @@ function RotatingArcs({
   return arcs;
 }
 
-export function MapCarrier({ carrierId }: { carrierId: string }) {
+export function MapCarrier({
+  carrierId,
+  selectedEntities,
+  zoom,
+}: {
+  carrierId: string;
+  selectedEntities: SelectionObject[];
+  zoom: number;
+}) {
   const img = useImage("/carrier.png");
   const scan = scanStore((state) => state.scan);
   const game = useGame(scan?.game);
   const carrier = scan?.carriers.find((c) => c.id === carrierId);
   const owner = scan?.players.find((p) => p.id === carrier?.owner);
   const [hovered, setHovered] = useState(false);
-  const [zoom, selectedEntities] = mapState((s) => [s.zoom, s.selected]);
   const isSelected = selectedEntities.some(
     (e) => e.type === "carrier" && e.id === carrierId
   );

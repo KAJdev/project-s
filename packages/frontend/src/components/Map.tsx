@@ -3,7 +3,7 @@ import { Scan, useScan } from "@/lib/scan";
 import { KonvaNodeComponent, Layer, Stage, StageProps } from "react-konva";
 import { useWindowSize } from "react-use";
 import { MapStar } from "./Map/Star";
-import { mapState } from "@/lib/map";
+import { MapState, mapState, useZoom, zoomState } from "@/lib/map";
 import { InnerScanCircle, OuterScanCircle } from "./Map/ScanCircle";
 import { UseKeyOptions } from "react-use/lib/useKey";
 import { HyperspaceCircle } from "./Map/HyperspaceCircle";
@@ -11,7 +11,15 @@ import { MapCarrier } from "./Map/Carrier";
 import { CarrierLines } from "./Map/CarrierLines";
 import { distance } from "@/lib/utils";
 
-function Stars({ scan }: { scan: Scan | null }) {
+function Stars({
+  scan,
+  zoom,
+  map,
+}: {
+  scan: Scan | null;
+  zoom: number;
+  map: MapState;
+}) {
   return useMemo(
     () => (
       <>
@@ -28,6 +36,7 @@ function Stars({ scan }: { scan: Scan | null }) {
             <OuterScanCircle
               key={keys(star.id, "outerscan")}
               starId={star.id}
+              zoom={zoom}
             />
           ))}
           {scan?.stars.map((star) => (
@@ -42,36 +51,55 @@ function Stars({ scan }: { scan: Scan | null }) {
             <CarrierLines key={carrier.id} carrierId={carrier.id} />
           ))}
           {scan?.stars.map((star) => (
-            <MapStar key={star.id} starId={star.id} />
+            <MapStar
+              key={star.id}
+              starId={star.id}
+              zoom={zoom}
+              flightPlanningFor={map.flightPlanningFor}
+              selectedEntities={map.selected}
+            />
           ))}
         </Layer>
       </>
     ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [scan?.stars.length, scan?.carriers.length]
+    [map.flightPlanningFor, map.selected, scan?.carriers, scan?.stars, zoom]
   );
 }
 
-function Carriers({ scan }: { scan: Scan | null }) {
+function Carriers({
+  scan,
+  zoom,
+  map,
+}: {
+  scan: Scan | null;
+  zoom: number;
+  map: MapState;
+}) {
   return useMemo(
     () => (
       <Layer>
         {scan?.carriers.map((carrier) => (
-          <MapCarrier key={carrier.id} carrierId={carrier.id} />
+          <MapCarrier
+            key={carrier.id}
+            carrierId={carrier.id}
+            zoom={zoom}
+            selectedEntities={map.selected}
+          />
         ))}
       </Layer>
     ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [scan?.carriers.length]
+    [map.selected, scan?.carriers, zoom]
   );
 }
 
 function Entities({ gameId }: { gameId: ID }) {
   const scan = useScan(gameId);
+  const zoom = useZoom();
+  const map = mapState();
   return (
     <>
-      <Stars scan={scan} />
-      <Carriers scan={scan} />
+      <Stars scan={scan} zoom={zoom} map={map} />
+      <Carriers scan={scan} zoom={zoom} map={map} />
     </>
   );
 }
@@ -79,7 +107,8 @@ function Entities({ gameId }: { gameId: ID }) {
 export function Map({ game }: { game: Game }) {
   const scan = useScan(game.id);
   const parentRef = useRef<HTMLDivElement>(null);
-  const { zoom, camera, panning } = mapState();
+  const panning = mapState((s) => s.panning);
+  const zoom = useZoom();
   const { width, height } = useWindowSize();
   const stage = React.useRef<any>(null);
   const lastPointerDownPosition = useRef<{ x: number; y: number }>({
@@ -90,12 +119,13 @@ export function Map({ game }: { game: Game }) {
   useEffect(() => {
     const pr = parentRef.current;
     const handleWheel = (e: WheelEvent) => {
-      const ms = mapState.getState();
+      const zs = zoomState.getState();
+      const zoom = zs.zoom;
 
       const newZoom = clamp(5, zoom - (e.deltaY / 1000) * zoom, 500);
-      ms.setZoom(newZoom);
+      zs.setZoom(newZoom);
 
-      // // that will zoom towards the center, but we want to zoom towards the mouse position
+      // that will zoom towards the center, but we want to zoom towards the mouse position
       const currentStage = stage.current as any; // fuck typescript
       if (!currentStage) return;
       const pointer = currentStage.getPointerPosition() as {
@@ -108,15 +138,13 @@ export function Map({ game }: { game: Game }) {
         y: (pointer.y - currentStage.y()) / zoom,
       };
 
-      ms.setCamera({
-        x: pointer.x - mousePointTo.x * newZoom,
-        y: pointer.y - mousePointTo.y * newZoom,
-      });
+      currentStage.x(pointer.x - mousePointTo.x * newZoom);
+      currentStage.y(pointer.y - mousePointTo.y * newZoom);
     };
 
     pr?.addEventListener("wheel", handleWheel);
     return () => pr?.removeEventListener("wheel", handleWheel);
-  }, [height, width, zoom]);
+  }, [height, width]);
 
   const onMouseUp = useCallback(
     (e: any) => {
@@ -126,6 +154,14 @@ export function Map({ game }: { game: Game }) {
         distance(pointer, lastPointerDownPosition.current) < 2 &&
         scan
       ) {
+        const zoom = zoomState.getState().zoom;
+        const currentStage = stage.current as any; // fuck typescript
+        if (!currentStage) return;
+        const camera = {
+          x: currentStage.x(),
+          y: currentStage.y(),
+        };
+
         const transformedPointer = {
           x: (pointer.x - camera.x) / zoom,
           y: (pointer.y - camera.y) / zoom,
@@ -144,8 +180,10 @@ export function Map({ game }: { game: Game }) {
             );
           });
 
-        mapState.getState().setFlightPlanningFor(null);
-        mapState.getState().setSelected(
+        const { setSelected, setFlightPlanningFor } = mapState.getState();
+
+        setFlightPlanningFor(null);
+        setSelected(
           entities
             // only grab first of each type
             .filter(
@@ -160,20 +198,22 @@ export function Map({ game }: { game: Game }) {
         );
       }
     },
-    [camera.x, camera.y, scan, zoom]
+    [scan]
   );
 
-  const onPointerMove = useCallback(
-    (e: any) => {
-      if (mapState.getState().panning) {
-        mapState.getState().setCamera({
-          x: camera.x + e.evt.movementX,
-          y: camera.y + e.evt.movementY,
-        });
-      }
-    },
-    [camera.x, camera.y]
-  );
+  const onPointerMove = useCallback((e: any) => {
+    if (mapState.getState().panning) {
+      const currentStage = stage.current as any; // fuck typescript
+      if (!currentStage) return;
+      const camera = {
+        x: currentStage.x(),
+        y: currentStage.y(),
+      };
+
+      currentStage.x(camera.x + e.evt.movementX);
+      currentStage.y(camera.y + e.evt.movementY);
+    }
+  }, []);
 
   const onPointerDown = useCallback((e: any) => {
     if (e.evt.button === 0) {
@@ -202,8 +242,6 @@ export function Map({ game }: { game: Game }) {
         ref={stage}
         height={height}
         scale={{ x: zoom, y: zoom }}
-        x={camera.x}
-        y={camera.y}
         onMouseUp={onMouseUp}
         onPointerMove={onPointerMove}
         onPointerDown={onPointerDown}

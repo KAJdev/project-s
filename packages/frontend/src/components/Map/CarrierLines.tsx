@@ -51,7 +51,7 @@ function CarrierLine({
   const zoom = useZoom();
   const [offset, setOffset] = useState(0);
   const [eta, setEta] = useState<number | null>(null);
-  const [selected, addSelected] = mapState((s) => [s.selected, s.addSelected]);
+  const selected = mapState((s) => s.selected);
 
   useEffect(() => {
     if (!active) return;

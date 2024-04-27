@@ -25,13 +25,15 @@ export function TickIndicator() {
   }, [lastTick]);
 
   const value = 100 - (secondsSinceLastTick / 1000 / 60) * 100;
+  const countdown = 60 - secondsSinceLastTick / 1000;
 
   return (
     <Tooltip
-      content={`Tick countdown: ${(
-        60 -
-        secondsSinceLastTick / 1000
-      ).toFixed()}`}
+      content={
+        countdown > 0
+          ? `Tick countdown: ${countdown.toFixed()}`
+          : "Waiting for next tick..."
+      }
       placement="right"
     >
       <div className="text-xs text-gray-400 w-5 h-5">

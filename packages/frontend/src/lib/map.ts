@@ -3,20 +3,16 @@ import { scanStore, useCarrier, usePlayer } from "./scan";
 import { getHyperSpaceDistance } from "./players";
 import { distance } from "./utils";
 
-type SelectionObject = {
+export type SelectionObject = {
   type: "star" | "carrier";
   id: ID;
 };
 
 export type MapState = {
-  zoom: number;
-  camera: { x: number; y: number };
   selected: SelectionObject[];
   panning: boolean;
   flightPlanningFor: ID | null;
 
-  setZoom: (zoom: number) => void;
-  setCamera: (camera: { x: number; y: number }) => void;
   setSelected: (selected: SelectionObject[]) => void;
   setPanning: (panning: boolean) => void;
   setFlightPlanningFor: (id: ID | null) => void;
@@ -26,14 +22,10 @@ export type MapState = {
 };
 
 export const mapState = create<MapState>((set) => ({
-  zoom: 100,
-  camera: { x: 0, y: 0 },
   selected: [],
   panning: false,
   flightPlanningFor: null,
 
-  setZoom: (zoom) => set({ zoom }),
-  setCamera: (camera) => set({ camera }),
   setSelected: (selected) => set({ selected }),
   setPanning: (panning) => set({ panning }),
   setFlightPlanningFor: (id) => set({ flightPlanningFor: id }),
@@ -49,8 +41,16 @@ export const mapState = create<MapState>((set) => ({
     })),
 }));
 
+export const zoomState = create<{
+  zoom: number;
+  setZoom: (zoom: number) => void;
+}>((set) => ({
+  zoom: 100,
+  setZoom: (zoom: number) => set({ zoom }),
+}));
+
 export function useZoom() {
-  return mapState((s) => s.zoom);
+  return zoomState((s) => s.zoom);
 }
 
 export function useFlightPlanningInfo(starId: ID): {

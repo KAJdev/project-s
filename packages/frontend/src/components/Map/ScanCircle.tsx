@@ -27,11 +27,16 @@ export function InnerScanCircle({ starId }: { starId: ID }) {
   );
 }
 
-export function OuterScanCircle({ starId }: { starId: ID }) {
+export function OuterScanCircle({
+  starId,
+  zoom,
+}: {
+  starId: ID;
+  zoom: number;
+}) {
   const player = usePlayer();
   const scan = scanStore((s) => s.scan);
   const star = scan?.stars.find((s) => s.id === starId);
-  const zoom = useZoom();
 
   if (!star || player?.id !== star?.occupier) {
     return null;

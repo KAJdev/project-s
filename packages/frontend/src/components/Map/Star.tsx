@@ -1,7 +1,12 @@
 /* eslint-disable jsx-a11y/alt-text */
 import { darken, hexToHSV, hexToRgb } from "@/lib/color";
 import { useImage } from "@/lib/image";
-import { mapState, useFlightPlanningInfo } from "@/lib/map";
+import {
+  SelectionObject,
+  mapState,
+  useFlightPlanningInfo,
+  useZoom,
+} from "@/lib/map";
 import {
   Scan,
   addToCarrierDestination,
@@ -162,7 +167,17 @@ function RotatingArcs({
   return arcs;
 }
 
-export function MapStar({ starId }: { starId: ID }) {
+export function MapStar({
+  starId,
+  zoom,
+  selectedEntities,
+  flightPlanningFor,
+}: {
+  starId: ID;
+  zoom: number;
+  selectedEntities: SelectionObject[];
+  flightPlanningFor: ID | null;
+}) {
   const scan = scanStore((state) => state.scan);
   const star = scan?.stars.find((s) => s.id === starId);
   const img = useImage("/star.png");
@@ -170,11 +185,6 @@ export function MapStar({ starId }: { starId: ID }) {
   const [hovered, setHovered] = useState(false);
   const carriers = useCarriersAround(star?.position, 0.1);
   const flightPlanInfo = useFlightPlanningInfo(starId);
-  const [zoom, selectedEntities, flightPlanningFor] = mapState((s) => [
-    s.zoom,
-    s.selected,
-    s.flightPlanningFor,
-  ]);
 
   return useMemo(() => {
     if (!star) {
