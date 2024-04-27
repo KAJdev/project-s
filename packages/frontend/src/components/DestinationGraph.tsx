@@ -14,6 +14,7 @@ import { Tooltip } from "./Theme/Tooltip";
 import { mapState } from "@/lib/map";
 import { Button } from "./Theme/Button";
 import { Select } from "./Theme/Select";
+import { useStarImagePath } from "./Map/Star";
 
 function GraphStar({
   star,
@@ -25,13 +26,14 @@ function GraphStar({
   index: number;
 }) {
   const player = useSpecificPlayer(star.occupier);
+  const imageUrl = useStarImagePath(star.id);
   return (
     <div className="flex justify-between gap-2 items-center w-full">
       <div className="flex items-center gap-2">
         <img
           className="w-8 h-8 rounded-full border-[3px]"
           style={{ borderColor: player?.color ?? "#888888" }}
-          src={"/star.png"}
+          src={imageUrl}
           alt={"star icon"}
         />
         <p>{star.name}</p>

@@ -1,14 +1,7 @@
 /* eslint-disable jsx-a11y/alt-text */
-import { darken, hexToHSV, hexToRgb } from "@/lib/color";
 import { useImage } from "@/lib/image";
+import { SelectionObject, useFlightPlanningInfo } from "@/lib/map";
 import {
-  SelectionObject,
-  mapState,
-  useFlightPlanningInfo,
-  useZoom,
-} from "@/lib/map";
-import {
-  Scan,
   addToCarrierDestination,
   scanStore,
   useCarriersAround,
@@ -21,38 +14,21 @@ function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
 }
 
-function pointWithinRect(
-  x: number,
-  y: number,
-  rect: { x: number; y: number; width: number; height: number }
-) {
-  return (
-    x >= rect.x &&
-    x <= rect.x + rect.width &&
-    y >= rect.y &&
-    y <= rect.y + rect.height
-  );
+function stickyNumberFromUUID(uuid: string, max: number) {
+  let sum = 0;
+  for (let i = 0; i < uuid.length; i++) {
+    sum += uuid.charCodeAt(i);
+  }
+  return sum % max;
 }
 
-function starInViewport(
-  star: { position: { x: number; y: number } },
-  viewport: {
-    x: number;
-    y: number;
-    zoom: number;
-    width: number;
-    height: number;
-  }
-) {
-  const { x, y } = star.position;
-  const { zoom, width, height } = viewport;
+export function useStarImagePath(starId: ID) {
+  const starType = stickyNumberFromUUID(starId, 1);
+  return `/star${starType}.png`;
+}
 
-  return pointWithinRect(x, y, {
-    x: viewport.x,
-    y: viewport.y,
-    width: width / zoom,
-    height: height / zoom,
-  });
+export function useStarImage(starId: ID) {
+  return useImage(useStarImagePath(starId));
 }
 
 function StarName({
@@ -180,7 +156,7 @@ export function MapStar({
 }) {
   const scan = scanStore((state) => state.scan);
   const star = scan?.stars.find((s) => s.id === starId);
-  const img = useImage("/star.png");
+  const img = useStarImage(starId);
   const imgRef = React.useRef(null);
   const [hovered, setHovered] = useState(false);
   const carriers = useCarriersAround(star?.position, 0.1);
@@ -229,17 +205,30 @@ export function MapStar({
               }}
             />
             {color && (
-              <Arc
-                x={star.position.x}
-                y={star.position.y}
-                innerRadius={starSize / 2}
-                outerRadius={starSize / 1.6}
-                angle={360}
-                fill={color}
-                opacity={0.5}
-                listening={false}
-                visible={!flightPlanInfo.outsideRange}
-              />
+              <>
+                <Arc
+                  x={star.position.x}
+                  y={star.position.y}
+                  innerRadius={starSize / 1.9}
+                  outerRadius={starSize / 1.5}
+                  angle={360}
+                  fill={color}
+                  opacity={0.75}
+                  listening={false}
+                  visible={!flightPlanInfo.outsideRange}
+                />
+                <Arc
+                  x={star.position.x}
+                  y={star.position.y}
+                  innerRadius={starSize / 100}
+                  outerRadius={starSize / 2.3}
+                  angle={360}
+                  fill={color}
+                  opacity={0.3}
+                  listening={false}
+                  visible={!flightPlanInfo.outsideRange}
+                />
+              </>
             )}
           </>
         ) : (
