@@ -390,10 +390,14 @@ class Carrier(Document):
             self.position = destination.position
             popped = self.destination_queue.pop(0)
 
-            if popped.action == "collect":
+            if popped.action == "collect" and destination.occupier == self.owner:
                 self.ships += destination.ships
                 await destination.set({Star.ships: 0})
-            elif popped.action == "drop" and self.ships > 1:
+            elif (
+                popped.action == "drop"
+                and self.ships > 1
+                and destination.occupier == self.owner
+            ):
                 await destination.inc({Star.ships: self.ships - 1})
                 self.ships = 1
 
