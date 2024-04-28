@@ -20,6 +20,7 @@ from modules import gateway
 from modules.worldgen import (
     generate_carrier_name,
 )
+from modules import newsgen
 from beanie.operators import Or, And, In
 
 bp = Blueprint("carriers")
@@ -378,7 +379,7 @@ async def carrier_tick(game: Game, stars: list[Star], hourly=False):
                 In(Carrier.id, [c.id for c in attacking_carriers]),
             ).delete_many()
 
-        await Event(
+        evnt = Event(
             game=game.id,
             type="combat",
             data=CombatEvent(
@@ -390,4 +391,12 @@ async def carrier_tick(game: Game, stars: list[Star], hourly=False):
                 star_name=star.name,
                 winner=winner,
             ),
-        ).save()
+        )
+
+        await evnt.save()
+
+        # create news story
+        # TODO: fix this dumb way of doing this
+        evnt.data.attacking_players = attacking_members
+        evnt.data.defending_players = [defending_member] if defending_member else []
+        await newsgen.create_article(game, evnt, stars)

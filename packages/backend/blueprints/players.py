@@ -23,6 +23,7 @@ from modules import gateway
 from modules.worldgen import (
     generate_carrier_name,
 )
+from modules import newsgen
 from beanie.operators import Or, And, In
 
 bp = Blueprint("players")
@@ -81,10 +82,14 @@ async def player_tick(game: Game, stars: list[Star], hourly=False):
     if is_production_tick:
         total_cash_created = sum([s.economy for s in stars]) * 10
 
-        await Event(
+        evnt = Event(
             game=game.id,
             type="production",
             data=ProductionEvent(
                 total_cash_created=total_cash_created,
             ),
-        ).save()
+        )
+
+        await evnt.save()
+
+        await newsgen.create_article(game, evnt, stars)

@@ -4,6 +4,7 @@ import {
   GameState,
   fetchGames,
   getGameState,
+  mockGame,
   startGame,
   useGame,
   useIsGameJoinable,
@@ -23,6 +24,7 @@ export function GameLayout() {
   const state = getGameState(game);
   const isJoinable = useIsGameJoinable(game);
   const [startLoading, setStartLoading] = useState(false);
+  const [mockLoading, setMockLoading] = useState(false);
 
   useEffect(() => {
     if (state === GameState.Running || state === GameState.Finished) {
@@ -96,25 +98,49 @@ export function GameLayout() {
           )}
 
           {game.owner === user?.id && (
-            <Button
-              variant={state === GameState.Ready ? "vibrant" : "secondary"}
-              className="mt-5"
-              loading={startLoading}
-              onClick={() => {
-                setStartLoading(true);
-                startGame(gameId)
-                  .then(() => {
-                    setStartLoading(false);
-                    fetchGames();
-                    fetchScan(gameId);
-                  })
-                  .catch(() => {
-                    setStartLoading(false);
-                  });
-              }}
-            >
-              {state === GameState.Ready ? "Start Game" : "Start Anyway"}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant={state === GameState.Ready ? "vibrant" : "secondary"}
+                className="mt-5"
+                loading={startLoading}
+                onClick={() => {
+                  setStartLoading(true);
+                  startGame(gameId)
+                    .then(() => {
+                      setStartLoading(false);
+                      fetchGames();
+                      fetchScan(gameId);
+                    })
+                    .catch(() => {
+                      setStartLoading(false);
+                    });
+                }}
+              >
+                {state === GameState.Ready ? "Start Game" : "Start Anyway"}
+              </Button>
+
+              {state !== GameState.Ready && (
+                <Button
+                  variant={"secondary"}
+                  className="mt-5"
+                  loading={mockLoading}
+                  onClick={() => {
+                    setMockLoading(true);
+                    mockGame(gameId)
+                      .then(() => {
+                        setMockLoading(false);
+                        fetchGames();
+                        fetchScan(gameId);
+                      })
+                      .catch(() => {
+                        setMockLoading(false);
+                      });
+                  }}
+                >
+                  Mock Game
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </div>

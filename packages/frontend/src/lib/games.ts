@@ -154,6 +154,12 @@ export async function createGame(name: string, settings: GameSettings) {
   });
 }
 
+export async function mockGame(game: ID) {
+  return await request<Game>(`/games/${game}/mock`, {
+    method: "POST",
+  });
+}
+
 export async function joinGame(
   gameId: ID,
   name: string,

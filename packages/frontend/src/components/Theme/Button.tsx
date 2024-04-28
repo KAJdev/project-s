@@ -31,9 +31,11 @@ export function Button({
   tooltip?: JSX.Element | string;
   href?: string;
 }) {
-  if (loading) {
-    disabled = true;
-  }
+  const [isDisabled, setIsDisabled] = useState(disabled || loading);
+
+  useEffect(() => {
+    setIsDisabled(loading || disabled);
+  }, [loading, disabled]);
 
   const content = (
     <button
@@ -53,11 +55,11 @@ export function Button({
         children === undefined && icon !== undefined
           ? "h-full aspect-square"
           : "",
-        disabled ? "opacity-50 pointer-events-none" : "",
+        isDisabled ? "opacity-50 pointer-events-none" : "",
         className
       )}
       onClick={(e) => {
-        if (disabled) {
+        if (isDisabled) {
           e.preventDefault();
           return;
         }

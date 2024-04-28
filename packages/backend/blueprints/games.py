@@ -155,6 +155,46 @@ async def join_game(request: Request, game_id: str):
     return json(game.dict())
 
 
+@bp.route("/v1/games/<game_id>/mock", methods=["POST"])
+@authorized()
+@openapi.operation("Mock a game")
+@openapi.description("Mock a game")
+async def mock_game(request: Request, game_id: str):
+    game = await Game.find_one(
+        Game.id == game_id,
+        Game.owner == request.ctx.user.id,
+        fetch_links=True,
+    )
+    if not game:
+        raise exceptions.NotFound("Game not found")
+
+    if len(game.members) >= game.settings.max_players:
+        raise exceptions.BadRequest("Game is full")
+
+    for m in [
+        ("Galax", "#ff0000"),
+        ("Hellian", "#00ff00"),
+        ("Zerath", "#0000ff"),
+        ("Solarians", "#ff00ff"),
+        ("Frithian", "#00ffff"),
+        ("Korath", "#ffff00"),
+        ("Talax", "#000000"),
+    ]:
+        game.members.append(
+            Player(
+                name=m[0],
+                color=m[1],
+                game=game.id,
+                user=str(random.randint(0, 1000000)),
+                cash=game.settings.starting_cash,
+            )
+        )
+
+    await game.save(link_rule=WriteRules.WRITE)
+
+    return json(game.dict())
+
+
 @bp.route("/v1/games", methods=["POST"])
 @authorized()
 @openapi.operation("Create a game")

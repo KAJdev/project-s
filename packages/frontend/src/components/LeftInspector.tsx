@@ -27,7 +27,7 @@ function TabButton({
   return (
     <button
       className={classes(
-        "p-2 px-4 basis-auto grow shrink-0",
+        "p-2 px-4 basis-auto grow shrink-0 uppercase",
         selected ? "bg-white/20" : "bg-white/5 hover:bg-white/10",
         className
       )}

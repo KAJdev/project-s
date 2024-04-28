@@ -4,7 +4,7 @@ import type { AppProps } from "next/app";
 import localFont from "next/font/local";
 
 export const font = localFont({
-  src: "/nb_architekt_regular-webfont.woff2",
+  src: "/BerkeleyMono.otf",
   fallback: ["sans-serif"],
 });
 

@@ -420,9 +420,64 @@ class CombatEvent(BaseModel):
     defender_ships: int
     winner: str
 
+    async def format(self):
+        winner = "draw"
+
+        # have to do beanie's job for them lmao
+        try:
+            to_fetch = list(
+                filter(
+                    lambda p: isinstance(p, Link),
+                    [*self.attacking_players, *self.defending_players],
+                )
+            )
+            fetched = await asyncio.gather(*[p.fetch() for p in to_fetch])
+
+            #  replace fetched links with actual objects based on Link.ref.id and Player.id
+            for p in fetched:
+                for player in [*self.attacking_players, *self.defending_players]:
+                    if isinstance(player, Link) and player.ref.id == p.id:
+                        if player in self.attacking_players:
+                            self.attacking_players.remove(player)
+                            self.attacking_players.append(p)
+                        else:
+                            self.defending_players.remove(player)
+                            self.defending_players.append(p)
+                        break
+        except Exception as e:
+            print(f"Error fetching players: {e}")
+            raise e
+
+        if self.winner:
+            for player in [*self.attacking_players, *self.defending_players]:
+                if player.id == self.winner:
+                    winner = player.name
+                    break
+
+        attacking = ", ".join([p.name for p in self.attacking_players]) or "Nobody"
+        defending = ", ".join([p.name for p in self.defending_players]) or "Unoccupied"
+
+        return "\n".join(
+            [
+                "type: combat",
+                f"star: {self.star_name}",
+                f"attacker{'s' if len(self.attacking_players) > 1 else ''}: {attacking} (with {self.attacker_ships} ships)",
+                f"defender{'s' if len(self.defending_players) > 1 else ''}: {defending} (with {self.defender_ships} ships)",
+                f"winner: {winner}",
+            ]
+        )
+
 
 class ProductionEvent(BaseModel):
     total_cash_created: int
+
+    async def format(self):
+        return "\n".join(
+            [
+                "type: state of the galaxy",
+                f"total taxes across all factions: {self.total_cash_created} credits",
+            ]
+        )
 
 
 class Event(Document):

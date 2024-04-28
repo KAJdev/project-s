@@ -12,5 +12,5 @@ bp = Blueprint("news")
 @openapi.operation("Get news")
 @openapi.description("Get news")
 async def get_news(request: Request, game_id: str):
-    news = await News.find(News.game == game_id).to_list(None)
+    news = await News.find(News.game == game_id).sort(-News.created_at).to_list(None)
     return json([n.dict() for n in news])
