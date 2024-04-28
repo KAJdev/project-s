@@ -43,7 +43,7 @@ export function NewGameLayout() {
               type="number"
               label="Max Players"
               value={gameForm.settings.max_players}
-              min={4}
+              min={2}
               max={32}
               onChange={(e) =>
                 setGameForm({
@@ -59,7 +59,7 @@ export function NewGameLayout() {
               label="Stars Per Player"
               value={gameForm.settings.stars_per_player}
               min={8}
-              max={32}
+              max={100}
               onChange={(e) =>
                 setGameForm({
                   ...gameForm,
@@ -115,7 +115,7 @@ export function NewGameLayout() {
               value={gameForm.settings.trading_level_cost}
               icon="$"
               min={1}
-              max={100}
+              max={1000}
               onChange={(e) =>
                 setGameForm({
                   ...gameForm,
@@ -134,8 +134,8 @@ export function NewGameLayout() {
               label="Starting Cash"
               value={gameForm.settings.starting_cash}
               icon="$"
-              min={100}
-              max={1000}
+              min={10}
+              max={10000}
               onChange={(e) =>
                 setGameForm({
                   ...gameForm,
@@ -154,7 +154,7 @@ export function NewGameLayout() {
               value={gameForm.settings.starting_ships}
               icon="🚀"
               min={1}
-              max={100}
+              max={1000}
               onChange={(e) =>
                 setGameForm({
                   ...gameForm,
@@ -174,8 +174,7 @@ export function NewGameLayout() {
               value={gameForm.settings.carrier_speed}
               icon="LY/h"
               min={0.1}
-              max={1}
-              step={0.1}
+              max={100}
               onChange={(e) =>
                 setGameForm({
                   ...gameForm,
@@ -191,7 +190,7 @@ export function NewGameLayout() {
               value={gameForm.settings.warp_speed}
               icon="LY/h"
               min={0.1}
-              max={1}
+              max={100}
               step={0.1}
               onChange={(e) =>
                 setGameForm({

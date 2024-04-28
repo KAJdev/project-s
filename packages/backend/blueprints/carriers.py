@@ -360,6 +360,7 @@ async def carrier_tick(game: Game, stars: list[Star], hourly=False):
                 for i in range(casualties):
                     if len(defending_carriers) <= 0:
                         star.ships -= 1
+                        continue
                     defending_carriers[i % len(defending_carriers)].ships -= 1
                     if defending_carriers[i % len(defending_carriers)].ships <= 0:
                         await defending_carriers[i % len(defending_carriers)].delete()

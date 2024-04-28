@@ -1,4 +1,4 @@
-import { Article, useNews } from "@/lib/news";
+import { Article, useNews, useReadArticle } from "@/lib/news";
 import { scanStore } from "@/lib/scan";
 import { Button } from "../Theme/Button";
 import { ArrowLeft } from "lucide-react";
@@ -10,24 +10,43 @@ function ArticleHeadline({
   article: Article;
   onClick: () => void;
 }) {
+  const [isRead, markAsRead] = useReadArticle(article.id);
+
   return (
-    <div
-      className="flex flex-col gap-1 cursor-pointer opacity-70 hover:opacity-100 duration-100"
-      onClick={onClick}
-    >
-      <p className="text-xs opacity-75">
-        {new Date(article.created_at).toDateString()}
-      </p>
-      <h3 className="text-lg">{article.title}</h3>
-      {article.tags.length > 0 && (
-        <div className="flex gap-1 text-xs">
-          {article.tags.map((tag) => (
-            <span key={tag} className="bg-white/10 px-1">
-              {tag}
-            </span>
-          ))}
+    <div className="flex gap-3 items-center">
+      <div
+        className={classes(
+          "inline w-2 h-2 shrink-0 bg-white",
+          isRead && "bg-transparent"
+        )}
+      />
+
+      <div
+        className={classes(
+          "flex flex-col gap-1 cursor-pointer opacity-60 hover:opacity-100 duration-100",
+          !isRead && "opacity-90"
+        )}
+        onClick={() => {
+          if (!isRead) markAsRead();
+          onClick();
+        }}
+      >
+        <p className="text-xs opacity-75">
+          {new Date(article.created_at).toLocaleString()}
+        </p>
+        <div className="flex gap-2 items-center">
+          <h3 className="text-lg">{article.title}</h3>
         </div>
-      )}
+        {article.tags.length > 0 && (
+          <div className="flex gap-1 text-xs">
+            {article.tags.map((tag) => (
+              <span key={tag} className="bg-white/10 px-1">
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -62,7 +81,7 @@ function ViewArticle({
       )}
       <hr className="my-2 border border-white/20" />
       <p className="text-xs opacity-75">
-        {new Date(article.created_at).toDateString()}
+        {new Date(article.created_at).toLocaleString()}
       </p>
       <div className="mt-4 text-sm opacity-90 whitespace-pre-line">
         {article.content}
