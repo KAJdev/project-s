@@ -19,7 +19,9 @@ async def game_tick(game: Game, hourly=False):
     await carrier_tick(game, stars, hourly=hourly)
     await player_tick(game, stars, hourly=hourly)
 
-    if random.random() < 0.05:
+    if (
+        random.random() < 0.01
+    ):  # 1% chance, should be on average 1 article every 100 minutes
         await newsgen.create_misc_article(game, stars)
 
     # every 10 minutes

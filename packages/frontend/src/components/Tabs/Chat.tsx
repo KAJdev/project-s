@@ -31,20 +31,35 @@ function ChatChannel({
     })
   );
 
+  const color = recipient?.color ?? "#eeeeee";
+  const opacity = 0.07;
+  const opacityHex = Math.floor(opacity * 255).toString(16);
+
   return (
     <div
       className={classes(
-        "flex flex-col gap-1 cursor-pointer opacity-60 hover:opacity-100 duration-100"
+        "flex flex-col gap-1 cursor-pointer duration-100 p-2 bg-white/10 hover:bg-white/20"
       )}
       onClick={onClick}
     >
-      <h3
-        style={{
-          color: recipient?.color ?? "white",
-        }}
-      >
-        {name}
-      </h3>
+      <div className="flex justify-between items-center">
+        <h3
+          className="text-lg truncate w-fit"
+          style={{
+            color,
+            backgroundColor: `${color}${opacityHex}`,
+          }}
+        >
+          {name}
+        </h3>
+        {lastMessage && (
+          <p className="opacity-30 text-xs">
+            {lastMessage?.created_at
+              ? new Date(lastMessage.created_at).toLocaleTimeString()
+              : "N/A"}
+          </p>
+        )}
+      </div>
       <p className="text-xs opacity-50 truncate">
         {lastMessage?.content || "..."}
       </p>
@@ -160,15 +175,11 @@ export function Chat() {
   }
 
   return (
-    <div className="flex flex-col gap-3 p-4 max-h-[30rem] overflow-y-auto">
+    <div className="flex flex-col gap-2 p-4 max-h-[30rem] overflow-y-auto">
       <ChatChannel player={null} onClick={() => setPlayer("global")} />
-      <hr className="border border-white/10" />
       {scan?.players.map((p, i) => (
         <>
           <ChatChannel key={p.id} player={p} onClick={() => setPlayer(p.id)} />
-          {i < scan.players.length - 1 && (
-            <hr className="border border-white/10" />
-          )}
         </>
       ))}
     </div>
