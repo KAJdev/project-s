@@ -79,6 +79,13 @@ Navigate to the `frontend` directory
 cd ./packages/frontend
 ```
 
+Create `.env.local` with the following template
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_GATEWAY_URL=ws://localhost:8000
+```
+
 Install dependencies
 
 ```bash
@@ -88,7 +95,7 @@ yarn install
 # or whatever's hot right now
 ```
 
-Start the webserver
+Start the dev webserver
 
 ```bash
 npm run dev
