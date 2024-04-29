@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 
+import { Player } from "@/lib/scan";
 import { User } from "@/lib/users";
 
 function simpleHash(str: string) {
@@ -22,12 +23,12 @@ function getColorFromHash(hash: number) {
 }
 
 export function Avatar({
-  user,
+  player,
   placeholderClassName,
   variant = "normal",
   onClick,
 }: {
-  user?: User | null;
+  player?: Player | null;
   placeholderClassName?: string;
   variant?: "normal" | "small" | "border";
   onClick?: () => void;
@@ -37,19 +38,11 @@ export function Avatar({
       ? "w-8 h-8"
       : variant === "normal"
       ? "w-12 h-12"
-      : "w-[6rem] h-[6rem] ring-8 ring-[#151515]" +
-        (user?.banner_url ? " -translate-y-1/2" : "");
+      : "w-[6rem] h-[6rem] ring-8 ring-[#151515]";
 
-  return user && user?.avatar_url ? (
-    <img
-      src={user?.avatar_url}
-      alt={user?.username}
-      className={classes("rounded-full", size, onClick && "cursor-pointer")}
-      onClick={onClick}
-    />
-  ) : (
+  return (
     <Placeholder
-      userId={user?.id}
+      userId={player?.id}
       className={classes(size, placeholderClassName)}
       onClick={onClick}
     />

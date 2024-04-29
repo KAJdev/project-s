@@ -42,11 +42,11 @@ export function ChatBar({ channelId }: { channelId: ID }) {
     if (!message) return;
     setDraft("");
 
-    await createMessage(message, channelId);
+    await createMessage(channelId, message);
   }, [draft, channelId, setDraft]);
 
   return (
-    <div className="w-full px-8 pb-8">
+    <div className="w-full">
       <div
         className="w-full bg-white/[3%] p-4 flex cursor-text"
         onClick={() => textAreaRef.current?.focus()}

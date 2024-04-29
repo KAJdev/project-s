@@ -7,10 +7,14 @@ import { Options } from "./Tabs/Options";
 import { News as NewsPage } from "./Tabs/News";
 import { Research } from "./Tabs/Research";
 import { scanStore } from "@/lib/scan";
+import { Census } from "./Tabs/Census";
+import { Chat } from "./Tabs/Chat";
 
 const currentTabs = {
+  chat: <Chat />,
   research: <Research />,
   news: <NewsPage />,
+  census: <Census />,
   options: <Options />,
 } as const;
 

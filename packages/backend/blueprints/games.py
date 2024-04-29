@@ -155,6 +155,17 @@ async def join_game(request: Request, game_id: str):
     return json(game.dict())
 
 
+MOCKS = [
+    ("Galax", "#ff0000"),
+    ("Hellian", "#00ff00"),
+    ("Zerath", "#0000ff"),
+    ("Solarians", "#ff00ff"),
+    ("Frithian", "#00ffff"),
+    ("Korath", "#ffff00"),
+    ("Talax", "#000000"),
+]
+
+
 @bp.route("/v1/games/<game_id>/mock", methods=["POST"])
 @authorized()
 @openapi.operation("Mock a game")
@@ -171,15 +182,10 @@ async def mock_game(request: Request, game_id: str):
     if len(game.members) >= game.settings.max_players:
         raise exceptions.BadRequest("Game is full")
 
-    for m in [
-        ("Galax", "#ff0000"),
-        ("Hellian", "#00ff00"),
-        ("Zerath", "#0000ff"),
-        ("Solarians", "#ff00ff"),
-        ("Frithian", "#00ffff"),
-        ("Korath", "#ffff00"),
-        ("Talax", "#000000"),
-    ]:
+    for m in MOCKS:
+        if len(game.members) >= game.settings.max_players:
+            break
+
         game.members.append(
             Player(
                 name=m[0],

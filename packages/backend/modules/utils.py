@@ -103,6 +103,5 @@ async def gpt(
             },
         ) as resp:
             data = await resp.json()
-            print(data)
             completion = data["choices"][0]["message"]["content"]
             return completion

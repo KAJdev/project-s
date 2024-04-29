@@ -13,6 +13,7 @@ from modules.db import (
     Game,
     ProductionEvent,
     Star,
+    StatementEvent,
     User,
     Carrier,
     distance,
@@ -63,6 +64,66 @@ async def edit_player(request: Request, game_id: str, player_id: str):
     await player.save_changes()
 
     return json(player.dict())
+
+
+@bp.route("/v1/games/<game_id>/statements/<player_id>", methods=["GET"])
+@authorized()
+@openapi.operation("Get player statements")
+@openapi.description("Get player statements")
+async def get_player_statements(request: Request, game_id: str, player_id: str):
+    player = await Player.find_one(
+        Player.user == request.ctx.user.id, Player.game == game_id
+    )
+    if not player:
+        # must be a player in the game
+        raise exceptions.NotFound("Game not found")
+
+    statements = await Event.find(
+        Event.game == game_id,
+        Event.data.player == player_id,
+        Event.type == "statement",
+    ).to_list(None)
+
+    return json([s.dict() for s in statements])
+
+
+@bp.route("/v1/games/<game_id>/statements", methods=["POST"])
+@authorized()
+@openapi.operation("Create a statement")
+@openapi.description("Create a statement")
+async def create_statement(request: Request, game_id: str):
+    data = request.json
+    game = await Game.find_one(
+        Game.id == game_id, Game.members.user == request.ctx.user.id, fetch_links=True
+    )
+    if not game:
+        raise exceptions.NotFound("Game not found")
+
+    player = next((p for p in game.members if p.user == request.ctx.user.id), None)
+
+    if not data:
+        raise exceptions.BadRequest("Bad Request")
+
+    content = data.get("content")
+    if not content:
+        raise exceptions.BadRequest("Missing content")
+
+    evnt = Event(
+        game=game_id,
+        type="statement",
+        data=StatementEvent(
+            player=player.id,
+            player_name=player.name,
+            message=content,
+        ),
+    )
+
+    await evnt.save()
+
+    stars = await Star.find(Star.game == game_id).to_list(None)
+    news = await newsgen.create_article(game, evnt, stars)
+
+    return json(news.dict())
 
 
 async def player_tick(game: Game, stars: list[Star], hourly=False):

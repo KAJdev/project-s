@@ -10,6 +10,7 @@ export type Article = {
   tags: string[];
   created_at: string;
   game: ID;
+  outlet_name: string;
 };
 
 export const newsReadReciepts = create(

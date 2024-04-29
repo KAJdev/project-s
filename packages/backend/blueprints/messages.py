@@ -11,19 +11,21 @@ MSG_PAGE_SIZE = 100
 bp = Blueprint("messages")
 
 
-@bp.route("/v1/messages/<game_id>/<player_id>", methods=["GET"])
+@bp.route("/v1/games/<game_id>/messages/<recipient>", methods=["GET"])
 @authorized()
 @openapi.operation("Get messages in a channel")
 @openapi.description("Get messages in a channel")
-async def get_messages(request: Request, game_id: str, player_id: str):
-    members = (
-        [request.ctx.user.id]
-        if player_id == "global"
-        else [request.ctx.user.id, player_id]
+async def get_messages(request: Request, game_id: str, recipient: str):
+    player = await Player.find_one(
+        Player.user == request.ctx.user.id, Player.game == game_id
     )
+    if not player:
+        raise exceptions.NotFound("Player not found")
+
+    members = [player.id] if recipient == "global" else [player.id, recipient]
 
     game = await Game.find_one(
-        Game.id == game_id, In(Game.members.user, members), fetch_links=True
+        Game.id == game_id, In(Game.members.id, members), fetch_links=True
     )
     if not game:
         raise exceptions.NotFound("Player or Game not found")
@@ -34,18 +36,21 @@ async def get_messages(request: Request, game_id: str, player_id: str):
     msgs = (
         await Message.find(
             (
-                Message.game == game_id
-                if player_id == "global"
+                And(
+                    Message.game == game_id,
+                    Message.recipient == None,
+                )
+                if recipient == "global"
                 else And(
                     Message.game == game_id,
                     Or(
                         And(
-                            Message.author == request.ctx.user.id,
-                            Message.recipient == player_id,
+                            Message.author == player.id,
+                            Message.recipient == recipient,
                         ),
                         And(
-                            Message.author == player_id,
-                            Message.recipient == request.ctx.user.id,
+                            Message.author == recipient,
+                            Message.recipient == player.id,
                         ),
                     ),
                 )
@@ -54,16 +59,17 @@ async def get_messages(request: Request, game_id: str, player_id: str):
         )
         .sort(-Message.created_at)
         .limit(MSG_PAGE_SIZE)
+        .to_list(None)
     )
 
     return json([msg.dict() for msg in msgs])
 
 
-@bp.route("/v1/messages/<game_id>/<player_id>", methods=["POST"])
+@bp.route("/v1/games/<game_id>/messages/<recipient>", methods=["POST"])
 @authorized()
 @openapi.operation("Send a message to a player")
 @openapi.description("Send a message to a player")
-async def create_message(request: Request, game_id: str, player_id: str):
+async def create_message(request: Request, game_id: str, recipient: str):
     data = request.json
     if not data:
         raise exceptions.BadRequest("Bad Request")
@@ -76,28 +82,41 @@ async def create_message(request: Request, game_id: str, player_id: str):
     ):
         raise exceptions.BadRequest("Bad Request")
 
-    members = (
-        [request.ctx.user.id]
-        if player_id == "global"
-        else [request.ctx.user.id, player_id]
+    player = await Player.find_one(
+        Player.user == request.ctx.user.id, Player.game == game_id
     )
+    if not player:
+        raise exceptions.NotFound("Player not found")
+
+    members = [player.id] if recipient == "global" else [player.id, recipient]
 
     game = await Game.find_one(
-        Game.id == game_id, In(Game.members.user, members), fetch_links=True
+        Game.id == game_id, In(Game.members.id, members), fetch_links=True
     )
     if not game:
         raise exceptions.NotFound("Player or Game not found")
 
+    recipient_player = next((p for p in game.members if p.id == recipient), None)
+    if recipient != "global" and not recipient_player:
+        raise exceptions.NotFound("Recipient not found")
+
     message = Message(
-        author=request.ctx.user.id,
-        recipient=player_id,
+        author=player.id,
+        recipient=recipient if recipient != "global" else None,
         game=game_id,
         content=data["content"],
     )
     await message.save()
 
     gateway.send_to_users(
-        game.members if player_id == "global" else members,
+        (
+            [m.user for m in game.members]
+            if recipient == "global"
+            else [
+                player.user,
+                recipient_player.user,
+            ]
+        ),
         gateway.GatewayOpCode.MESSAGE_CREATE,
         message.dict(),
     )

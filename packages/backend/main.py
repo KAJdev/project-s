@@ -54,7 +54,11 @@ for extension in blueprint_names:
 @app.websocket("/v1/gateway")
 @openapi.exclude()
 async def feed(request: Request, ws: gateway.Websocket):
-    if not (user := await authenticate(request, request.args.get("token"))):
+    if not (token := request.args.get("token")):
+        await ws.send("Unauthorized")
+        return
+
+    if not (user := await authenticate(request, token)):
         await ws.send("Unauthorized")
         return
 

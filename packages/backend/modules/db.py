@@ -484,11 +484,26 @@ class ProductionEvent(BaseModel):
         )
 
 
+class StatementEvent(BaseModel):
+    player: str
+    player_name: str
+    message: str
+
+    async def format(self):
+        return "\n".join(
+            [
+                "type: statement",
+                f"state: {self.player_name}",
+                f"message: {self.message}",
+            ]
+        )
+
+
 class Event(Document):
     id: str = Field(default_factory=generate_id)
     game: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    data: CombatEvent | ProductionEvent
+    data: CombatEvent | ProductionEvent | StatementEvent
     type: str
 
     def dict(self):
@@ -506,6 +521,7 @@ class News(Document):
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     title: str
     content: str
+    outlet_name: str = Field(default="The Galactic News Network")
     tags: list[str] = Field(default_factory=list)
 
     def dict(self):
@@ -517,11 +533,52 @@ class News(Document):
         use_state_management = True
 
 
+class PlayerCensus(BaseModel):
+    player: str
+    stars: int
+    carriers: int
+    cash: int
+    ships: int
+    industry: int
+    economy: int
+    science: int
+    research_levels: Research
+
+    def model_dump(self):
+        d = super().model_dump(exclude={"cash"})
+        return d
+
+
+class Census(Document):
+    id: str = Field(default_factory=generate_id)
+    game: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    players: list[PlayerCensus] = Field(default_factory=list)
+
+    def dict(self):
+        d = super().model_dump()
+        return convert_dates_to_iso(d)
+
+    class Settings:
+        name = "census"
+        use_state_management = True
+
+
 async def init():
     global client
     client = AsyncIOMotorClient(getenv("MONGO_URL"))
     await init_beanie(
         database=client[getenv("ENV")],
-        document_models=[User, Game, Player, Message, Star, Carrier, Event, News],
+        document_models=[
+            User,
+            Game,
+            Player,
+            Message,
+            Star,
+            Carrier,
+            Event,
+            News,
+            Census,
+        ],
     )
     print("Connected to MongoDB", important=True)

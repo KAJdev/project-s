@@ -1,17 +1,31 @@
 /* eslint-disable @next/next/no-img-element */
 import { create } from "zustand";
 import { request } from "./api";
-import { useUser, userStore } from "./users";
+import { userStore } from "./users";
+import { scanStore } from "./scan";
 
 export type Message = {
   id?: ID;
+  game: ID;
+  author: ID;
+  recipient: ID | null;
   content: string;
-  owner: ID;
-  channel: ID;
   created_at: string; // ISO 8601
-  updated_at: string;
   nonce?: string;
 };
+
+export function getMessageChannel({ author, recipient }: Partial<Message>) {
+  // make recipient/author pairs but make it deterministic (so if A sends to B, it's the same as B sending to A)
+  if (!recipient) {
+    return "global";
+  }
+
+  if (author === recipient) {
+    return author;
+  }
+
+  return [author, recipient].sort().join("-");
+}
 
 export const messageStore = create<{
   messages: Record<ID, Message[]>;
@@ -26,7 +40,8 @@ export const messageStore = create<{
   addMessage: (message) =>
     set((state) => {
       // dudpe by ID and nonce
-      const messages = state.messages[message.channel] ?? [];
+      const channel = getMessageChannel(message);
+      const messages = state.messages[channel] ?? [];
       const dupes = messages.filter(
         (m) =>
           (message.id && m.id === message.id) ||
@@ -45,13 +60,13 @@ export const messageStore = create<{
       return {
         messages: {
           ...state.messages,
-          [message.channel]: filtered,
+          [channel]: filtered,
         },
       };
     }),
   bulkAddContext: (messages) =>
     set((state) => {
-      const channel = messages[0].channel;
+      const channel = getMessageChannel(messages[0]);
       const current = state.messages[channel] ?? [];
       const newMessages = messages.filter(
         (m) => !current.find((c) => c.id === m.id)
@@ -72,6 +87,7 @@ export const messageStore = create<{
     }),
   removeMessage: (message, channel) =>
     set((state) => {
+      if (!state.messages[channel]) return state;
       state.messages[channel] = state.messages[channel].filter(
         (m) => m.id !== message && m.nonce !== message
       );
@@ -83,10 +99,8 @@ export const messageStore = create<{
 }));
 
 export function useChannelMessages(channel: ID | undefined) {
-  if (!channel) {
-    return [] as const;
-  }
-  return messageStore((state) => state.messages[channel]) ?? [];
+  if (!channel) return [];
+  return messageStore((state) => state.messages[channel] ?? []);
 }
 
 export function useGetEarliestMessage(channel: ID | undefined) {
@@ -99,35 +113,53 @@ export function useGetEarliestMessage(channel: ID | undefined) {
   return getEarliestMessage;
 }
 
+export function useLastMessage(channel: ID) {
+  const messages = useChannelMessages(channel);
+  return messages[messages.length - 1];
+}
+
 export function usePreviousMessage(message: Message) {
-  const messages = useChannelMessages(message.channel);
+  const messages = useChannelMessages(getMessageChannel(message));
   const index = messages.findIndex((m) => m.id === message.id);
   return messages[index - 1];
 }
 
-export async function createMessage(content: string, channel: ID) {
+export async function createMessage(recipient: ID | null, content: string) {
   const message: Partial<Message> = {
     content,
   };
 
   const nonce = Math.random().toString(36).substring(7);
 
+  const user = userStore.getState().user;
+  if (!user) return;
+
+  const scan = scanStore.getState().scan;
+  const player = scan?.players.find((p) => p.user === user.id);
+  const game = scan?.game;
+  if (!player || !game) return;
+
   messageStore.getState().addMessage({
     content,
-    owner: userStore.getState().user?.id ?? "",
-    channel,
+    author: player.id,
+    recipient,
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
     nonce,
+    game,
   });
 
-  const msg = await request<Message>(`/channels/${channel}/messages`, {
-    method: "POST",
-    body: message,
-  });
+  const msg = await request<Message>(
+    `/games/${game}/messages/${recipient || "global"}`,
+    {
+      method: "POST",
+      body: message,
+    }
+  );
 
   if (!msg) {
-    return messageStore.getState().removeMessage(nonce, channel);
+    return messageStore
+      .getState()
+      .removeMessage(nonce, getMessageChannel(message));
   }
 
   messageStore.getState().addMessage({
