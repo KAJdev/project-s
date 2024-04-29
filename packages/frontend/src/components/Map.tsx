@@ -216,6 +216,8 @@ export function Map({ game }: { game: Game }) {
       </Stage>
       <a
         href="https://github.com/kajdev/project-s"
+        target="_blank"
+        rel="noreferrer"
         className="absolute text-xs right-3 bottom-3 opacity-50 hover:underline"
       >
         {process.env.NEXT_PUBLIC_COMMIT_SHA ?? "LOCAL DEV BUILD"}
