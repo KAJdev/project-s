@@ -38,7 +38,7 @@ function ChatChannel({
   return (
     <div
       className={classes(
-        "flex flex-col gap-1 cursor-pointer duration-100 p-2 bg-white/10 hover:bg-white/20"
+        "flex flex-col gap-1 cursor-pointer duration-200 hover:duration-0 p-2 bg-white/10 hover:bg-white/20"
       )}
       onClick={onClick}
     >

@@ -120,9 +120,16 @@ export function Census() {
             },
             tooltip: {
               container: {
-                background: "#0f1722",
+                background: "#0f1722bb",
+                // bg blur
+                backdropFilter: "blur(10px)",
                 border: "1px solid rgba(255, 255, 255, 0.2)",
                 borderRadius: "0",
+                fontSize: "11px",
+                fontFamily: "inherit",
+
+                // get rid of shadows
+                boxShadow: "none",
               },
             },
             grid: {
