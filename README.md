@@ -3,7 +3,7 @@
 ![project s screenshot](/splash.png)
 
 > [!IMPORTANT]
-> This project is in its infancy, and \***\*WILL NOT WORK\*\*** in its current state. Any issues created will be marked as wontfix and you will be sad and I will laugh.
+> This project is in its infancy, so be a little patient with it. Please don't hesistate to open an issue if you find any bugs or want to suggest tweaks.
 
 A super duper original (totally revolutionary) space game inspired by games like Neptune's Pride. Created with next.js (zustand, tailwind, konva, framer-motion) on the frontend, python (asyncio, motor, beanie, sanic) on the backend, assuming MongoDB as a database.
 
@@ -14,7 +14,7 @@ If you'd like to contruibute, tweak, or run your own local instance of Project S
 ### Running the backend
 
 > [!NOTE]
-> Requires python 3.10 or higher
+> Requires python 3.11 or higher
 
 Navigate to the `backend` directory
 
@@ -29,6 +29,9 @@ Create `.env` with the following template
 
 ```env
 MONGO_URL={database uri}
+DEBUG=1
+ENV=staging
+OPENAI_TOKEN={open ai token if you want}
 ```
 
 Create a virtual environment (optional but recommended to keep your system packages clean, requires virtualenv)

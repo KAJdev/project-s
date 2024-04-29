@@ -1,3 +1,4 @@
+from os import getenv
 import random
 import re
 from modules.db import Event, News, Star, Game
@@ -72,6 +73,10 @@ OUTLET_NAMES = [
 
 
 async def create_article(game: Game, event: Event, stars: list[Star]):
+    if not getenv("OPENAI_TOKEN", None):
+        print("No OpenAI token set, skipping article generation")
+        return
+
     player_strings = []
     outlet = random.choice(OUTLET_NAMES)
 
@@ -141,6 +146,10 @@ async def create_article(game: Game, event: Event, stars: list[Star]):
 
 
 async def create_misc_article(game: Game, stars: list[Star]):
+    if not getenv("OPENAI_TOKEN", None):
+        print("No OpenAI token set, skipping article generation")
+        return
+
     player_strings = []
     outlet = random.choice(OUTLET_NAMES)
 
