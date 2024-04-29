@@ -147,7 +147,7 @@ export function News() {
   return (
     <div className="flex flex-col">
       <MakeStatement gameId={scan.game} />
-      <div className="flex flex-col gap-5 p-4 max-h-[40rem] overflow-y-auto">
+      <div className="flex flex-col gap-5 p-4 max-h-[30rem] overflow-y-auto">
         {articles.map((article, i) => (
           <>
             <ArticleHeadline

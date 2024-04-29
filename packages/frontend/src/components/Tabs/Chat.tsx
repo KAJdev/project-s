@@ -122,7 +122,7 @@ function ChannelLayout({
   }
 
   return (
-    <div className="h-full w-full flex flex-col-reverse">
+    <div className="h-full w-full flex flex-col-reverse max-h-[30rem] overflow-y-auto">
       <ChatBar channelId={playerId ?? "global"} />
       <div
         ref={parentRef}

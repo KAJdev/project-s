@@ -73,7 +73,7 @@ export function Census() {
   }));
 
   return (
-    <div className="flex flex-col gap-2 p-4 max-h-[40rem] overflow-y-auto">
+    <div className="flex flex-col gap-2 p-4 max-h-[40rem] overflow-y-auto shrink-0">
       <Select
         value={aspect}
         onChange={(e) => setAspect(e)}
