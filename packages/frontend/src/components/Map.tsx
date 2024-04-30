@@ -1,7 +1,7 @@
 import { Game } from "@/lib/games";
 import { Scan, useScan } from "@/lib/scan";
 import { KonvaNodeComponent, Layer, Stage, StageProps } from "react-konva";
-import { useWindowSize } from "react-use";
+import { useWindowSize, usePinchZoom } from "react-use";
 import { MapStar } from "./Map/Star";
 import { MapState, mapState, useZoom, zoomState } from "@/lib/map";
 import { InnerScanCircle, OuterScanCircle } from "./Map/ScanCircle";
@@ -111,9 +111,11 @@ export function Map({ game }: { game: Game }) {
 
   const onMouseUp = useCallback(
     (e: any) => {
+      touches.current -= 1;
       const pointer = e.target.getStage()!.getPointerPosition()!;
+      lastTouchMove.current = null;
       if (
-        e.evt.button === 0 &&
+        (e.evt.button === 0 || e.type === "touchend") &&
         distance(pointer, lastPointerDownPosition.current) < 2 &&
         scan
       ) {
@@ -164,6 +166,34 @@ export function Map({ game }: { game: Game }) {
     [scan]
   );
 
+  const lastTouchMove = useRef<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const touches = useRef<number>(0);
+  console.log("touches", touches.current);
+  const onTouchMove = useCallback((e: any) => {
+    if (mapState.getState().panning) {
+      e.evt.preventDefault();
+      const currentStage = stage.current as any; // fuck typescript
+      if (!currentStage) return;
+      const camera = {
+        x: currentStage.x(),
+        y: currentStage.y(),
+      };
+
+      const pointer = e.target.getStage()!.getPointerPosition()!;
+      const distance = {
+        x: pointer.x - lastTouchMove.current.x,
+        y: pointer.y - lastTouchMove.current.y,
+      };
+
+      lastTouchMove.current = pointer;
+      currentStage.x(camera.x + distance.x);
+      currentStage.y(camera.y + distance.y);
+    }
+  }, []);
+
   const onPointerMove = useCallback((e: any) => {
     if (mapState.getState().panning) {
       const currentStage = stage.current as any; // fuck typescript
@@ -179,10 +209,12 @@ export function Map({ game }: { game: Game }) {
   }, []);
 
   const onPointerDown = useCallback((e: any) => {
-    if (e.evt.button === 0) {
+    if (e.evt.button === 0 || e.type === "touchstart") {
       const pointer = e.target.getStage()!.getPointerPosition()!;
       lastPointerDownPosition.current = pointer;
+      lastTouchMove.current = pointer;
       mapState.getState().setPanning(true);
+      touches.current += 1;
     }
   }, []);
 
@@ -195,6 +227,7 @@ export function Map({ game }: { game: Game }) {
   const onPointerUp = useCallback(() => {
     if (panning) {
       mapState.getState().setPanning(false);
+      lastTouchMove.current = null;
     }
   }, [panning]);
 
@@ -206,11 +239,13 @@ export function Map({ game }: { game: Game }) {
         height={height}
         scale={{ x: zoom, y: zoom }}
         onMouseUp={onMouseUp}
-        onPointerMove={onPointerMove}
+        onMouseMove={onPointerMove}
         onPointerDown={onPointerDown}
         onMouseLeave={onMouseLeave}
         onPointerUp={onPointerUp}
-        onTap={onPointerUp}
+        onTouchEnd={onMouseUp}
+        onTouchMove={onTouchMove}
+        onTouchStart={onPointerDown}
       >
         <Entities gameId={game.id} />
       </Stage>

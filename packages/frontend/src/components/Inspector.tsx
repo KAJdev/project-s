@@ -1,4 +1,5 @@
 import { ChevronDown, X } from "lucide-react";
+import { ReactNode } from "react";
 
 export function Inspector({
   children,
@@ -124,7 +125,7 @@ export function Field({
   variant = "horizontal",
 }: {
   label?: string;
-  sublabel?: string;
+  sublabel?: ReactNode;
   variant?: "horizontal" | "box";
 } & StyleableWithChildren) {
   if (variant === "horizontal") {
@@ -135,7 +136,11 @@ export function Field({
           <div className="my-auto grow border-b border-white/10 border-dashed" />
           <div className="shrink-0">{children}</div>
         </div>
-        {sublabel && <p className="text-xs opacity-50">{sublabel}</p>}
+        {sublabel && typeof sublabel === "string" ? (
+          <p className="text-xs opacity-50">{sublabel}</p>
+        ) : (
+          sublabel
+        )}
       </div>
     );
   }

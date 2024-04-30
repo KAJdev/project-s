@@ -165,7 +165,7 @@ export function Census() {
             },
           }}
           axisBottom={{
-            tickValues: "every 2 hours",
+            tickValues: "every 4 hours",
             format: "%H:%M",
           }}
           xScale={{

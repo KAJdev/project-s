@@ -13,6 +13,7 @@ export function Button({
   active,
   onClick,
   href,
+  inPlaceLoading = false,
 }: StyleableWithChildren & {
   icon?: ReactNode;
   variant?:
@@ -30,6 +31,7 @@ export function Button({
   onClick?: () => void;
   tooltip?: JSX.Element | string;
   href?: string;
+  inPlaceLoading?: boolean;
 }) {
   const [isDisabled, setIsDisabled] = useState(disabled || loading);
 
@@ -37,10 +39,17 @@ export function Button({
     setIsDisabled(loading || disabled);
   }, [loading, disabled]);
 
+  let renderedChildren = children;
+  if (inPlaceLoading && loading) {
+    renderedChildren = (
+      <div className="opacity-0 flex gap-2 items-center">{children}</div>
+    );
+  }
+
   const content = (
     <button
       className={classes(
-        "flex gap-2 duration-100 px-2 py-[0.4rem] text-sm items-center select-none cursor-default",
+        "flex gap-2 duration-100 px-2 py-[0.4rem] text-sm items-center select-none cursor-default relative",
         variant === "primary" && "primary-panel-interactive",
         variant === "secondary" && "secondary-panel-interactive",
         variant === "transparent" && "transparent-panel-interactive",
@@ -75,13 +84,17 @@ export function Button({
     >
       {loading ? (
         <Loader2
-          className="text-white opacity-80 animate-spin shrink-0"
+          className={classes(
+            "text-white opacity-80 animate-spin shrink-0",
+            inPlaceLoading &&
+              "absolute left-[calc(50%-7px)] top-[calc(50%-7px)]"
+          )}
           size={14}
         />
       ) : (
         icon
       )}
-      {children}
+      {renderedChildren}
       {href && <ExternalLink className="text-white opacity-80" size={14} />}
     </button>
   );

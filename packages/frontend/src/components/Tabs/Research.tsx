@@ -99,39 +99,41 @@ function ResearchItem({
   return (
     <div
       className={classes(
-        "bg-white/10 px-3 py-2 flex relative gap-4 border border-dotted items-center h-[5.7rem] z-0"
+        "bg-white/10 px-3 py-2 flex sm:flex-row flex-col relative gap-4 border border-dotted items-center min-h-[5.7rem] z-0"
       )}
       style={{
         borderColor: isResearching ? player.color : "transparent",
       }}
     >
-      <div
-        className={classes("absolute left-0 top-0 h-full opacity-10 z-0")}
-        style={{
-          width: `${clamp(0, progress * 100, 100)}%`,
-          backgroundColor: isResearching ? player.color : "white",
-        }}
-      />
-      <div className="shrink-0 z-10">{technology.icon}</div>
-      <div className="flex flex-col gap-0.5 h-full items-start z-10">
-        <div className="text-lg flex gap-2 items-center">
-          <span className="bg-[#315796] text-sm p-[1px] px-2">
-            LVL {currentLevel}
-          </span>
-          {technology.name}
+      <div className="flex items-center gap-4">
+        <div
+          className={classes("absolute left-0 top-0 h-full opacity-10 z-0")}
+          style={{
+            width: `${clamp(0, progress * 100, 100)}%`,
+            backgroundColor: isResearching ? player.color : "white",
+          }}
+        />
+        <div className="shrink-0 z-10">{technology.icon}</div>
+        <div className="flex flex-col gap-0.5 h-full items-start z-10">
+          <div className="text-lg flex gap-2 items-center">
+            <span className="bg-[#315796] text-sm p-[1px] px-2 shrink-0">
+              LVL {currentLevel}
+            </span>
+            {technology.name}
+          </div>
+          <p className="text-xs text-[9px] sm:text-[11px] opacity-75">
+            {technology.description}
+          </p>
         </div>
-        <p className="text-xs text-[9px] sm:text-[11px] opacity-75">
-          {technology.description}
-        </p>
       </div>
-      <div className="flex flex-col gap-2 items-center ml-auto w-[8rem] shrink-0 z-10">
+      <div className="flex sm:flex-col gap-2 items-center ml-auto w-full justify-between sm:w-[8rem] shrink-0 z-10">
         <p className="text-sm opacity-75">
           {points} / {cost}
         </p>
         <Button
           className={classes(
-            "justify-center w-full",
-            isResearching ? "p-0" : "p-2 text-xs"
+            "justify-center sm:w-full",
+            isResearching ? "p-0" : "sm:p-2 text-xs"
           )}
           variant={isResearching ? "transparent" : "outline"}
           disabled={isResearching}

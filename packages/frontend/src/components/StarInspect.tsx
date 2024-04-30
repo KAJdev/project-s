@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { Slider } from "./Theme/Slider";
 import { mapState } from "@/lib/map";
+import { useWindowSize } from "react-use";
 
 export function StarAspect({
   star,
@@ -44,12 +45,18 @@ export function StarAspect({
   sublabel?: string;
 }) {
   const [loading, setLoading] = useState(false);
+  const { width } = useWindowSize();
+  const num = <p className="text-2xl sm:text-center">{star[aspect]}</p>;
   return (
-    <Field variant="box" label={aspect} sublabel={sublabel}>
-      <p className="w-full text-center text-2xl">{star[aspect]}</p>
+    <Field
+      variant={width <= 640 ? "horizontal" : "box"}
+      label={aspect}
+      sublabel={width <= 640 ? num : sublabel}
+    >
+      {width > 640 && num}
       {player?.id === star.occupier && (
         <Button
-          className="w-full justify-center mt-2 pr-0 py-0"
+          className="w-full justify-center sm:mt-2 pr-0 py-0"
           variant="vibrant"
           loading={loading}
           onClick={() => {
@@ -57,8 +64,9 @@ export function StarAspect({
             upgradeStar(star.id, aspect).finally(() => setLoading(false));
           }}
           disabled={starCosts[aspect] > (player?.cash ?? 0)}
+          inPlaceLoading
         >
-          <p className="px-2 py-[0.4rem] w-full text-left">Upgrade </p>
+          <p className="px-2 py-[0.4rem] w-full text-left">Upgrade</p>
           <p className="px-3 py-[0.4rem] shrink-0 bg-white/10">
             ${starCosts[aspect].toFixed(0)}
           </p>
@@ -225,7 +233,7 @@ export function StarInspect({ starId }: { starId: ID }) {
     >
       {exists(star.resources) && (
         <>
-          <div className="flex">
+          <div className="flex sm:flex-row flex-col sm:gap-0 gap-3">
             <StarAspect
               star={star}
               starCosts={starCosts}
