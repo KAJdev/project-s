@@ -8,7 +8,8 @@ import {
 } from "@/lib/scan";
 import { Html } from "react-konva-utils";
 import { Arc, Circle, Image } from "react-konva";
-import { Rocket } from "lucide-react";
+import { DollarSign, Factory, Microscope, Rocket } from "lucide-react";
+import { Tooltip } from "../Theme/Tooltip";
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
@@ -63,7 +64,6 @@ function StarName({
         <p
           className="px-2"
           style={{
-            //backgroundColor: darken(color, -200),
             borderColor: color,
           }}
           ref={ref}
@@ -75,7 +75,6 @@ function StarName({
         <p
           className="px-2 w-fit -mt-[2px] border-t-0 flex items-center gap-1"
           style={{
-            //backgroundColor: darken(color, -200),
             borderColor: color,
           }}
           ref={ref}
@@ -85,19 +84,35 @@ function StarName({
         </p>
       )}
 
-      {/* {resources && false && (
+      {resources && (
         <div
-          className="flex gap-5 px-2"
+          className="flex gap-4 px-2 relative select-none"
           style={{
             borderColor: color,
             fontSize: 12,
           }}
         >
-          <p>{resources.economy}</p>
-          <p>{resources.industry}</p>
-          <p>{resources.science}</p>
+          <Tooltip content="Economy" passThroughClassName="translate-y-4">
+            <div className="flex items-center gap-1 pointer-events-auto">
+              <DollarSign size={12} fill={color} stroke={color} />
+              {resources.economy}
+            </div>
+          </Tooltip>
+          <Tooltip content="Industry">
+            <div className="flex items-center gap-1 pointer-events-auto">
+              <Factory size={12} fill={color} stroke={color} />
+              {resources.industry}
+            </div>
+          </Tooltip>
+
+          <Tooltip content="Science" passThroughClassName="translate-y-4">
+            <div className="flex items-center gap-1 pointer-events-auto">
+              <Microscope size={12} fill={color} stroke={color} />
+              {resources.science}
+            </div>
+          </Tooltip>
         </div>
-      )} */}
+      )}
     </div>
   );
 }
@@ -261,36 +276,62 @@ export function MapStar({
         )}
 
         {(hovered || isSelected || zoom > 50) && (
-          <Html
-            groupProps={{
-              x: star.position.x,
-              y: star.position.y + starSize / 1.1,
-              scale: { x: 1 / zoom, y: 1 / zoom },
-              listening: false,
-            }}
-            divProps={{
-              style: {
-                pointerEvents: "none",
-                zIndex: isSelected || hovered ? 100 : 0,
-                opacity: flightPlanInfo.outsideRange ? 0.2 : 1,
-              },
-            }}
-          >
-            <StarName
-              name={zoom > 175 ? star.name : null}
-              color={color}
-              ships={exists(star.ships) ? totalShips : null}
-              resources={
-                star.resources && zoom > 75
-                  ? {
-                      economy: star.economy!,
-                      industry: star.industry!,
-                      science: star.science!,
-                    }
-                  : null
-              }
-            />
-          </Html>
+          <>
+            <Html
+              groupProps={{
+                x: star.position.x,
+                y: star.position.y + starSize / 1.1,
+                scale: { x: 1 / zoom, y: 1 / zoom },
+                listening: false,
+              }}
+              divProps={{
+                style: {
+                  pointerEvents: "none",
+                  zIndex: isSelected || hovered ? 100 : 0,
+                  opacity: flightPlanInfo.outsideRange ? 0.2 : 1,
+                },
+              }}
+            >
+              <StarName
+                name={zoom > 175 ? star.name : null}
+                color={color}
+                ships={exists(star.ships) && star.occupier ? totalShips : null}
+                resources={null}
+              />
+            </Html>
+            {(hovered || isSelected || zoom > 175) && star.occupier && (
+              <Html
+                groupProps={{
+                  x: star.position.x,
+                  y: star.position.y - starSize / 0.7,
+                  scale: { x: 1 / zoom, y: 1 / zoom },
+                  listening: false,
+                }}
+                divProps={{
+                  style: {
+                    pointerEvents: "none",
+                    zIndex: isSelected || hovered ? 100 : 0,
+                    opacity: flightPlanInfo.outsideRange ? 0.2 : 1,
+                  },
+                }}
+              >
+                <StarName
+                  name={null}
+                  ships={null}
+                  color={color}
+                  resources={
+                    star.resources && zoom > 75
+                      ? {
+                          economy: star.economy!,
+                          industry: star.industry!,
+                          science: star.science!,
+                        }
+                      : null
+                  }
+                />
+              </Html>
+            )}
+          </>
         )}
 
         {isSelected && (
