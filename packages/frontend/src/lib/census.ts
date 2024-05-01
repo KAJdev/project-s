@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { request } from "./api";
-import { Technology, scanStore } from "./scan";
+import { Technology, scanStore, useScan } from "./scan";
 import { persist } from "zustand/middleware";
 
 export type CensusPlayerPoint = {
@@ -27,7 +27,7 @@ export async function fetchCensus(gameId: ID) {
 
 export function useCensus(gameId: ID | null | undefined): CensusPoint[] {
   const [census, setCensus] = useState<CensusPoint[]>([]);
-  const scan = scanStore((state) => state.scan);
+  const scan = useScan();
 
   useEffect(() => {
     if (!gameId) return;

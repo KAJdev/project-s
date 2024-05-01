@@ -2,7 +2,7 @@
 import { darken, hexToHSV, hexToRgb } from "@/lib/color";
 import { useImage } from "@/lib/image";
 import { SelectionObject, mapState, useZoom } from "@/lib/map";
-import { Carrier, Scan, getETA, scanStore } from "@/lib/scan";
+import { Carrier, Scan, getETA, scanStore, useScan } from "@/lib/scan";
 import { Html } from "react-konva-utils";
 import { Arc, Circle, Image, Rect } from "react-konva";
 import { Rocket } from "lucide-react";
@@ -173,10 +173,14 @@ export function MapCarrier({
   zoom: number;
 }) {
   const img = useImage("/carrier.png");
-  const scan = scanStore((state) => state.scan);
+  const scan = useScan();
   const game = useGame(scan?.game);
   const carrier = scan?.carriers.find((c) => c.id === carrierId);
   const owner = scan?.players.find((p) => p.id === carrier?.owner);
+  const starsAround =
+    scan?.stars.filter(
+      (s) => carrier && distance(s.position, carrier?.position) < 0.2
+    ) ?? [];
   const [hovered, setHovered] = useState(false);
   const isSelected = selectedEntities.some(
     (e) => e.type === "carrier" && e.id === carrierId
@@ -302,7 +306,8 @@ export function MapCarrier({
       )}
 
       {(hovered || isSelected || zoom > 50) &&
-        carrier.destination_queue.length > 0 && (
+        carrier.destination_queue.length > 0 &&
+        starsAround.length === 0 && (
           <Html
             groupProps={{
               x: localPosition.x,

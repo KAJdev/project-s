@@ -5,11 +5,13 @@ import {
   addToCarrierDestination,
   scanStore,
   useCarriersAround,
+  useScan,
 } from "@/lib/scan";
 import { Html } from "react-konva-utils";
 import { Arc, Circle, Image } from "react-konva";
 import { DollarSign, Factory, Microscope, Rocket } from "lucide-react";
 import { Tooltip } from "../Theme/Tooltip";
+import { KonvaEventObject } from "konva/lib/Node";
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
@@ -169,13 +171,23 @@ export function MapStar({
   selectedEntities: SelectionObject[];
   flightPlanningFor: ID | null;
 }) {
-  const scan = scanStore((state) => state.scan);
+  const scan = useScan();
   const star = scan?.stars.find((s) => s.id === starId);
   const img = useStarImage(starId);
   const imgRef = React.useRef(null);
   const [hovered, setHovered] = useState(false);
   const carriers = useCarriersAround(star?.position, 0.1);
   const flightPlanInfo = useFlightPlanningInfo(starId);
+
+  const onPressed = useCallback(
+    (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
+      if (flightPlanningFor) {
+        addToCarrierDestination(starId);
+        e.cancelBubble = true;
+      }
+    },
+    [flightPlanningFor, starId]
+  );
 
   return useMemo(() => {
     if (!star) {
@@ -212,12 +224,8 @@ export function MapStar({
               onMouseLeave={() => setHovered(false)}
               opacity={flightPlanInfo.outsideRange ? 0.2 : 1}
               listening={!flightPlanInfo.outsideRange}
-              onMouseUp={(e) => {
-                if (flightPlanningFor) {
-                  addToCarrierDestination(starId);
-                  e.cancelBubble = true;
-                }
-              }}
+              onMouseUp={onPressed}
+              onTouchEnd={onPressed}
             />
             {color && (
               <>
@@ -256,12 +264,8 @@ export function MapStar({
             fill={owner?.color || "gray"}
             opacity={flightPlanInfo.outsideRange ? 0.2 : 1}
             listening={!flightPlanInfo.outsideRange}
-            onMouseUp={(e) => {
-              if (flightPlanningFor) {
-                addToCarrierDestination(starId);
-                e.cancelBubble = true;
-              }
-            }}
+            onMouseUp={onPressed}
+            onTouchEnd={onPressed}
           />
         )}
 

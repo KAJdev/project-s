@@ -1,5 +1,5 @@
 import { Game } from "@/lib/games";
-import { Scan, useScan } from "@/lib/scan";
+import { Scan, useGameScan, useScan } from "@/lib/scan";
 import { KonvaNodeComponent, Layer, Stage, StageProps } from "react-konva";
 import { useWindowSize, usePinchZoom } from "react-use";
 import { MapStar } from "./Map/Star";
@@ -10,9 +10,12 @@ import { HyperspaceCircle } from "./Map/HyperspaceCircle";
 import { MapCarrier } from "./Map/Carrier";
 import { CarrierLines } from "./Map/CarrierLines";
 import { distance } from "@/lib/utils";
+import { ZoomState } from "react-use/lib/usePinchZoom";
+import { useShallow } from "zustand/react/shallow";
+import { KonvaEventObject } from "konva/lib/Node";
 
-function Entities({ gameId }: { gameId: ID }) {
-  const scan = useScan(gameId);
+function Entities() {
+  const scan = useScan();
   const zoom = useZoom();
   const map = mapState();
   return useMemo(
@@ -68,8 +71,15 @@ function Entities({ gameId }: { gameId: ID }) {
 }
 
 export function Map({ game }: { game: Game }) {
-  const scan = useScan(game.id);
-  const parentRef = useRef<HTMLDivElement>(null);
+  return (
+    <div className="w-dvw z-0 h-dvh overflow-hidden bg-[#081118]">
+      <MapStage game={game} />
+    </div>
+  );
+}
+
+export function MapStage({ game }: { game: Game }) {
+  const scan = useGameScan(game.id);
   const panning = mapState((s) => s.panning);
   const zoom = useZoom();
   const { width, height } = useWindowSize();
@@ -80,7 +90,7 @@ export function Map({ game }: { game: Game }) {
   });
 
   useEffect(() => {
-    const pr = parentRef.current;
+    const pr = stage.current?.content.parentElement;
     const handleWheel = (e: WheelEvent) => {
       const zs = zoomState.getState();
       const zoom = zs.zoom;
@@ -111,7 +121,6 @@ export function Map({ game }: { game: Game }) {
 
   const onMouseUp = useCallback(
     (e: any) => {
-      touches.current -= 1;
       const pointer = e.target.getStage()!.getPointerPosition()!;
       lastTouchMove.current = null;
       if (
@@ -170,9 +179,8 @@ export function Map({ game }: { game: Game }) {
     x: number;
     y: number;
   } | null>(null);
-  const touches = useRef<number>(0);
-  console.log("touches", touches.current);
-  const onTouchMove = useCallback((e: any) => {
+  const lastTouchDistance = useRef<number>(0);
+  const onTouchMove = useCallback((e: KonvaEventObject<TouchEvent>) => {
     if (mapState.getState().panning) {
       e.evt.preventDefault();
       const currentStage = stage.current as any; // fuck typescript
@@ -182,15 +190,48 @@ export function Map({ game }: { game: Game }) {
         y: currentStage.y(),
       };
 
-      const pointer = e.target.getStage()!.getPointerPosition()!;
-      const distance = {
-        x: pointer.x - lastTouchMove.current.x,
-        y: pointer.y - lastTouchMove.current.y,
-      };
+      if (e.evt.touches.length > 1) {
+        const t1 = e.evt.touches[0];
+        const t2 = e.evt.touches[1];
+        const touchDistance = Math.sqrt(
+          Math.pow(t1.clientX - t2.clientX, 2) +
+            Math.pow(t1.clientY - t2.clientY, 2)
+        );
+        const delta = lastTouchDistance.current - touchDistance;
 
-      lastTouchMove.current = pointer;
-      currentStage.x(camera.x + distance.x);
-      currentStage.y(camera.y + distance.y);
+        // now we gatta zoom
+        const zs = zoomState.getState();
+        const zoom = zs.zoom;
+
+        const newZoom = clamp(5, zoom - (delta / 100) * zoom, 500);
+        zs.setZoom(newZoom);
+
+        // that will zoom towards the center, but we want to zoom towards the mouse position
+        const midpoint = {
+          x: (t1.clientX + t2.clientX) / 2,
+          y: (t1.clientY + t2.clientY) / 2,
+        };
+
+        const mousePointTo = {
+          x: (midpoint.x - currentStage.x()) / zoom,
+          y: (midpoint.y - currentStage.y()) / zoom,
+        };
+
+        currentStage.x(midpoint.x - mousePointTo.x * newZoom);
+        currentStage.y(midpoint.y - mousePointTo.y * newZoom);
+
+        lastTouchDistance.current = touchDistance;
+      } else {
+        const pointer = e.target.getStage()!.getPointerPosition()!;
+        const distance = {
+          x: pointer.x - lastTouchMove.current.x,
+          y: pointer.y - lastTouchMove.current.y,
+        };
+
+        lastTouchMove.current = pointer;
+        currentStage.x(camera.x + distance.x);
+        currentStage.y(camera.y + distance.y);
+      }
     }
   }, []);
 
@@ -208,15 +249,28 @@ export function Map({ game }: { game: Game }) {
     }
   }, []);
 
-  const onPointerDown = useCallback((e: any) => {
-    if (e.evt.button === 0 || e.type === "touchstart") {
-      const pointer = e.target.getStage()!.getPointerPosition()!;
-      lastPointerDownPosition.current = pointer;
-      lastTouchMove.current = pointer;
-      mapState.getState().setPanning(true);
-      touches.current += 1;
-    }
-  }, []);
+  const onPointerDown = useCallback(
+    (e: KonvaEventObject<TouchEvent | PointerEvent>) => {
+      if (
+        ("button" in e.evt && e.evt.button === 0) ||
+        e.type === "touchstart"
+      ) {
+        const pointer = e.target.getStage()!.getPointerPosition()!;
+        lastPointerDownPosition.current = pointer;
+        lastTouchMove.current = pointer;
+        if ("touches" in e.evt && e.evt.touches.length > 1) {
+          const t1 = e.evt.touches[0];
+          const t2 = e.evt.touches[1];
+          lastTouchDistance.current = Math.sqrt(
+            Math.pow(t1.clientX - t2.clientX, 2) +
+              Math.pow(t1.clientY - t2.clientY, 2)
+          );
+        }
+        mapState.getState().setPanning(true);
+      }
+    },
+    []
+  );
 
   const onMouseLeave = useCallback((e: any) => {
     if (e.evt.button === 0) {
@@ -232,7 +286,7 @@ export function Map({ game }: { game: Game }) {
   }, [panning]);
 
   return (
-    <div ref={parentRef} className="w-dvw h-dvh overflow-hidden bg-[#081118]">
+    <>
       <Stage
         width={width}
         ref={stage}
@@ -247,7 +301,7 @@ export function Map({ game }: { game: Game }) {
         onTouchMove={onTouchMove}
         onTouchStart={onPointerDown}
       >
-        <Entities gameId={game.id} />
+        <Entities />
       </Stage>
       <a
         href="https://github.com/kajdev/project-s"
@@ -257,6 +311,6 @@ export function Map({ game }: { game: Game }) {
       >
         {process.env.NEXT_PUBLIC_COMMIT_SHA ?? "LOCAL DEV BUILD"}
       </a>
-    </div>
+    </>
   );
 }

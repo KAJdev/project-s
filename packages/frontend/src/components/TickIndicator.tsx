@@ -2,9 +2,10 @@ import { scanStore } from "@/lib/scan";
 import { CircularProgressbar } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import { Tooltip } from "./Theme/Tooltip";
+import { useShallow } from "zustand/react/shallow";
 
 export function TickIndicator() {
-  const lastTick = scanStore((state) => state.lastTick);
+  const lastTick = scanStore(useShallow((s) => s.lastTick));
   const [secondsSinceLastTick, setSecondsSinceLastTick] =
     React.useState<number>(
       Date.now() - (lastTick ?? Date.now() - (Date.now() % 60000))

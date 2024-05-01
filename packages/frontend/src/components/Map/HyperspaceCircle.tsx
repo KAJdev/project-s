@@ -1,10 +1,10 @@
 import { getHyperSpaceDistance } from "@/lib/players";
-import { Scan, scanStore, usePlayer } from "@/lib/scan";
+import { Scan, scanStore, usePlayer, useScan } from "@/lib/scan";
 import { Circle } from "react-konva";
 
 export function HyperspaceCircle({ starId }: { starId: ID }) {
   const player = usePlayer();
-  const scan = scanStore((s) => s.scan);
+  const scan = useScan();
   const star = scan?.stars.find((s) => s.id === starId);
 
   if (!star || player?.id !== star?.occupier) {

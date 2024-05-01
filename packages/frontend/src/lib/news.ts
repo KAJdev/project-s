@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { request } from "./api";
-import { scanStore } from "./scan";
+import { scanStore, useScan } from "./scan";
 import { persist } from "zustand/middleware";
 
 export type Article = {
@@ -38,7 +38,7 @@ export async function fetchNews(gameId: ID) {
 
 export function useNews(gameId: ID | null | undefined): Article[] {
   const [articles, setArticles] = useState<Article[]>([]);
-  const scan = scanStore((state) => state.scan);
+  const scan = useScan();
 
   useEffect(() => {
     if (!gameId) return;
