@@ -70,7 +70,9 @@ async def generate_map(game: Game):
             )
         )
 
-    await Star.insert_many(stars)
+    for s in stars:
+        s.gen_planets()
+    await Star.insert_many(stars, link_rule=WriteRules.WRITE)
 
 
 @bp.route("/v1/games", methods=["GET"])

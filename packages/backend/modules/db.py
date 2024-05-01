@@ -258,6 +258,15 @@ class Star(Document):
     game: str
     position: Position
     name: str
+    planets: list[Link["Planet"]] = Field(default_factory=list)
+
+
+class Planet(Document):
+    id: str = Field(default_factory=generate_id)
+    game: str
+    orbits: str
+    distance: int
+    name: str
     occupier: Optional[str] = Field(default=None)
     ships: int = Field(default=0)
     ship_accum: float = Field(
@@ -333,8 +342,48 @@ class Star(Document):
         self.ships += int(self.ship_accum)
         self.ship_accum -= int(self.ship_accum)
 
+    def do_orbit(self, game: Game, stars: list[Star], carriers: list["Carrier"]):
+        """
+        orbit around star
+        """
+        star = next((s for s in stars if s.id == self.orbits), None)
+        if not star:
+            return
+
+        orbit_speed = (game.settings.carrier_speed * 0.6) / 60
+
+        # rotate around star by speed, make sure actual distance moved is based on speed, dont just rotate by speed
+        r = distance(self.position, star.position)
+        theta = orbit_speed / r
+
+        new_position = Position(
+            x=star.position.x
+            + (self.position.x - star.position.x) * math.cos(theta)
+            - (self.position.y - star.position.y) * math.sin(theta),
+            y=star.position.y
+            + (self.position.x - star.position.x) * math.sin(theta)
+            + (self.position.y - star.position.y) * math.cos(theta),
+        )
+
+        # get the delta between the new position and the old position
+        delta = Position(
+            x=new_position.x - self.position.x, y=new_position.y - self.position.y
+        )
+
+        # find all the carriers currently on the planet
+        carriers_on_planet = [
+            c for c in carriers if distance(c.position, self.position) < 0.01
+        ]
+
+        # move the carriers
+        for carrier in carriers_on_planet:
+            carrier.position.x += delta.x
+            carrier.position.y += delta.y
+
+        self.position = new_position
+
     class Settings:
-        name = "stars"
+        name = "planets"
         use_state_management = True
 
 

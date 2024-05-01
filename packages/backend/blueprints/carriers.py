@@ -8,6 +8,7 @@ from modules.db import (
     Event,
     GameSettings,
     Message,
+    Planet,
     Player,
     Game,
     Star,
@@ -29,7 +30,7 @@ bp = Blueprint("carriers")
 @bp.route("/v1/games/<game_id>/carriers", methods=["POST"])
 @authorized()
 @openapi.operation("Build a carrier")
-@openapi.description("Build a carrier at a star")
+@openapi.description("Build a carrier at a planet")
 async def build_carrier(request: Request, game_id: str):
     game = await Game.get(game_id, fetch_links=True)
     if not game:
@@ -42,15 +43,15 @@ async def build_carrier(request: Request, game_id: str):
     if not data:
         raise exceptions.BadRequest("Bad Request")
 
-    star_id = data.get("star_id")
+    planet_id = data.get("planet_id")
     name = data.get("name", None)
     ships = data.get("ships", 1)
 
-    if not star_id or ships < 1:
+    if not planet_id or ships < 1:
         raise exceptions.BadRequest("Bad Request")
 
-    star = await Star.get(star_id)
-    if not star:
+    planet = await Planet.get(planet_id)
+    if not planet:
         raise exceptions.BadRequest("Bad Request")
 
     player = await Player.find_one(
@@ -59,7 +60,7 @@ async def build_carrier(request: Request, game_id: str):
     if not player:
         raise exceptions.BadRequest("Bad Request")
 
-    if not star.occupier == player.id or star.ships < ships:
+    if not planet.occupier == player.id or planet.ships < ships:
         raise exceptions.BadRequest("Bad Request")
 
     if player.cash < 25:
@@ -76,19 +77,19 @@ async def build_carrier(request: Request, game_id: str):
         destination_queue=[],
         name=name,
         owner=player.id,
-        position=star.position,
+        position=planet.position,
     )
 
     await carrier.save()
-    await star.inc({Star.ships: -ships})
+    await planet.inc({Planet.ships: -ships})
 
     return json(carrier.dict())
 
 
 @bp.route("/v1/games/<game_id>/transfer", methods=["PATCH"])
 @authorized()
-@openapi.operation("Transfer ships between carriers or stars")
-@openapi.description("Transfer ships between carriers or stars")
+@openapi.operation("Transfer ships between carriers or planets")
+@openapi.description("Transfer ships between carriers or planets")
 async def transfer_ships(request: Request, game_id: str):
     player = await Player.find_one(
         Player.game == game_id, Player.user == request.ctx.user.id
@@ -118,10 +119,10 @@ async def transfer_ships(request: Request, game_id: str):
     carriers = await Carrier.find(
         And(Carrier.game == game.id, Or(Carrier.id == from_id, Carrier.id == to_id))
     ).to_list(None)
-    stars = await Star.find(
-        And(Star.game == game.id, Or(Star.id == from_id, Star.id == to_id))
+    planets = await Planet.find(
+        And(Planet.game == game.id, Or(Planet.id == from_id, Planet.id == to_id))
     ).to_list(None)
-    entities = carriers + stars
+    entities = carriers + planets
 
     if not all(
         player.id
@@ -198,39 +199,40 @@ async def control_carrier(request: Request, game_id: str, carrier_id: str):
     if destinations:
         if (
             carrier.destination_queue
-            and carrier.destination_queue[0].star != destinations[0].star
+            and carrier.destination_queue[0].planet != destinations[0].planet
         ):
             raise exceptions.BadRequest("Bad Request")
 
-        all_stars = await Star.find(
-            Star.game == game.id, In(Star.id, [d.star for d in destinations])
+        all_planets = await Planet.find(
+            Planet.game == game.id, In(Planet.id, [d.planet for d in destinations])
         ).to_list(None)
         last_position = (
             carrier.position
             if not carrier.destination_queue
             else next(
                 (
-                    star
-                    for star in all_stars
-                    if star.id == carrier.destination_queue[0].star
+                    planet
+                    for planet in all_planets
+                    if planet.id == carrier.destination_queue[0].planet
                 ),
                 None,
             ).position
         )
         for destination in destinations:
-            star = next(
-                (star for star in all_stars if star.id == destination.star), None
+            planet = next(
+                (planet for planet in all_planets if planet.id == destination.planet),
+                None,
             )
-            if not star:
+            if not planet:
                 raise exceptions.BadRequest("Bad Request")
 
             if (
-                distance(last_position, star.position)
+                distance(last_position, planet.position)
                 > player.get_hyperspace_distance()
             ):
                 raise exceptions.BadRequest("Bad Request")
 
-            last_position = star.position
+            last_position = planet.position
 
         carrier.destination_queue = destinations
 
@@ -249,29 +251,31 @@ async def carrier_tick(game: Game, stars: list[Star], hourly=False):
     await asyncio.gather(*tasks)
 
     # fight me bitch
-    for star in stars:
+    for planet in (star.planets for star in stars):
         # get all the carriers within fighting distance (say 0.01 LY)
         close_carriers = [
-            c for c in carriers if distance(c.position, star.position) < 0.01
+            c for c in carriers if distance(c.position, planet.position) < 0.01
         ]
 
-        defending_carriers = [c for c in close_carriers if c.owner == star.occupier]
-        attacking_carriers = [c for c in close_carriers if c.owner != star.occupier]
+        defending_carriers = [c for c in close_carriers if c.owner == planet.occupier]
+        attacking_carriers = [c for c in close_carriers if c.owner != planet.occupier]
 
         if len(attacking_carriers) <= 0:
             # it's quiet. Tooo quiet.
             continue
 
-        defending_ships = star.ships + sum(
-            [c.ships for c in close_carriers if c.owner == star.occupier]
+        defending_ships = planet.ships + sum(
+            [c.ships for c in close_carriers if c.owner == planet.occupier]
         )
         attacking_ships = sum(
-            [c.ships for c in close_carriers if c.owner != star.occupier]
+            [c.ships for c in close_carriers if c.owner != planet.occupier]
         )
 
         try:
             defending_weapons = next(
-                p.research_levels.weapons for p in game.members if p.id == star.occupier
+                p.research_levels.weapons
+                for p in game.members
+                if p.id == planet.occupier
             )
         except StopIteration:
             defending_weapons = 0
@@ -290,12 +294,12 @@ async def carrier_tick(game: Game, stars: list[Star], hourly=False):
 
         og_defending_ships = defending_ships
         og_attacking_ships = attacking_ships
-        og_star_owner = star.occupier
+        og_planet_owner = planet.occupier
         attacking_members = [
             p for p in game.members if p.id in [c.owner for c in attacking_carriers]
         ]
         try:
-            defending_member = next(p for p in game.members if p.id == og_star_owner)
+            defending_member = next(p for p in game.members if p.id == og_planet_owner)
         except StopIteration:
             defending_member = None
 
@@ -305,7 +309,7 @@ async def carrier_tick(game: Game, stars: list[Star], hourly=False):
 
             if attacking_ships <= 0:
                 attacking_ships = 0
-                winner = star.occupier
+                winner = planet.occupier
                 break
 
             if attacking_ships > 0:
@@ -319,17 +323,17 @@ async def carrier_tick(game: Game, stars: list[Star], hourly=False):
 
         # yield the spoils of war!!
         if attackers_win:
-            star.occupier = winner
-            star.ships = 0
-            star.ship_accum = 0
+            planet.occupier = winner
+            planet.ships = 0
+            planet.ship_accum = 0
 
             # give the winner star.economy * 10 cash
-            if star.economy > 0:
+            if planet.economy > 0:
                 winner_player = next(p for p in game.members if p.id == winner)
-                await winner_player.inc({Player.cash: star.economy * 10})
+                await winner_player.inc({Player.cash: planet.economy * 10})
 
             # your pillaging has consequences
-            star.economy = 0
+            planet.economy = 0
 
             casualties = og_attacking_ships - attacking_ships
 
@@ -346,7 +350,7 @@ async def carrier_tick(game: Game, stars: list[Star], hourly=False):
                 await asyncio.gather(*tasks)
 
             # now nuke the losers
-            await star.save_changes()
+            await planet.save_changes()
             if len(defending_carriers) > 0:
                 await Carrier.find(
                     Carrier.game == game.id,
@@ -359,7 +363,7 @@ async def carrier_tick(game: Game, stars: list[Star], hourly=False):
             if casualties > 0:
                 for i in range(casualties):
                     if len(defending_carriers) <= 0:
-                        star.ships -= 1
+                        planet.ships -= 1
                         continue
                     defending_carriers[i % len(defending_carriers)].ships -= 1
                     if defending_carriers[i % len(defending_carriers)].ships <= 0:
@@ -372,7 +376,7 @@ async def carrier_tick(game: Game, stars: list[Star], hourly=False):
                         tasks.append(c.save())
                     await asyncio.gather(*tasks)
 
-            await star.save()
+            await planet.save()
 
             # the attackers lose lol rip
             await Carrier.find(
@@ -388,8 +392,8 @@ async def carrier_tick(game: Game, stars: list[Star], hourly=False):
                 defender_ships=og_defending_ships,
                 attacking_players=[p.id for p in attacking_members],
                 defending_players=[defending_member.id] if defending_member else [],
-                star_id=star.id,
-                star_name=star.name,
+                planet_id=planet.id,
+                planet_name=planet.name,
                 winner=winner,
             ),
         )
