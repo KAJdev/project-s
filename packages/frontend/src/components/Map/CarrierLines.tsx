@@ -1,9 +1,9 @@
 import { mapState, useZoom } from "@/lib/map";
-import { Scan, getETA, scanStore } from "@/lib/scan";
+import { Scan, getETA, scanStore, useScan } from "@/lib/scan";
 import { Line, Text } from "react-konva";
 
 export function CarrierLines({ carrierId }: { carrierId: ID }) {
-  const scan = scanStore((s) => s.scan);
+  const scan = useScan();
   const carrier = scan?.carriers.find((c) => c.id === carrierId);
   if (!carrier) return null;
 
