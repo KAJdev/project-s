@@ -1,11 +1,11 @@
 import { fetchGames, restartGame, useGame } from "@/lib/games";
-import { scanStore, usePlayer } from "@/lib/scan";
+import { scanStore, usePlayer, useScan } from "@/lib/scan";
 import { Field } from "../Inspector";
 import { Button } from "../Theme/Button";
 
 export function Options() {
   const self = usePlayer();
-  const scan = scanStore((state) => state.scan);
+  const scan = useScan();
   const game = useGame(scan?.game);
 
   return (

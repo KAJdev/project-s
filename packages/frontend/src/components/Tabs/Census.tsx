@@ -1,5 +1,5 @@
 import { useCensus } from "@/lib/census";
-import { scanStore } from "@/lib/scan";
+import { scanStore, useScan } from "@/lib/scan";
 import dynamic from "next/dynamic";
 import { Select } from "../Theme/Select";
 import { useMeasure } from "react-use";
@@ -38,7 +38,7 @@ const RESEARCH_ASPECTS = [
 ] as const;
 
 export function Census() {
-  const scan = scanStore((state) => state.scan);
+  const scan = useScan();
   const censusPoints = useCensus(scan?.game);
   const [aspect, setAspect] = useState<keyof typeof ASPECTS>("stars");
   const [ref, { width }] = useMeasure<HTMLDivElement>();

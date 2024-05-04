@@ -1,5 +1,5 @@
 import { Article, useNews, useReadArticle } from "@/lib/news";
-import { scanStore } from "@/lib/scan";
+import { scanStore, useScan } from "@/lib/scan";
 import { Button } from "../Theme/Button";
 import { ArrowLeft } from "lucide-react";
 import { request } from "@/lib/api";
@@ -15,17 +15,15 @@ function ArticleHeadline({
   const [isRead, markAsRead] = useReadArticle(article.id);
 
   return (
-    <div className="flex gap-3 items-center">
+    <div
+      className={classes(
+        "flex gap-3 items-center bg-white/10 px-3 py-2 duration-100 hover:bg-white/20 group",
+        !isRead && "border-l-4 border-blue-500"
+      )}
+    >
       <div
         className={classes(
-          "inline w-2 h-2 shrink-0 bg-white",
-          isRead && "bg-transparent"
-        )}
-      />
-
-      <div
-        className={classes(
-          "flex flex-col gap-1 cursor-pointer opacity-60 hover:opacity-100 duration-100",
+          "flex flex-col gap-1 cursor-pointer opacity-60 group-hover:opacity-100 duration-100",
           !isRead && "opacity-90"
         )}
         onClick={() => {
@@ -130,13 +128,11 @@ function MakeStatement({ gameId }: { gameId: ID }) {
 }
 
 export function News() {
-  const scan = scanStore((state) => state.scan);
+  const scan = useScan();
   const articles = useNews(scan?.game);
   const [selected, setSelected] = useState<ID | null>(null);
 
   if (!scan) return <div className="p-4">No game selected...</div>;
-
-  if (articles.length < 1) return <div className="p-4">No news yet...</div>;
 
   if (selected) {
     const article = articles.find((a) => a.id === selected);
@@ -147,19 +143,22 @@ export function News() {
   return (
     <div className="flex flex-col">
       <MakeStatement gameId={scan.game} />
-      <div className="flex flex-col gap-5 p-4 max-h-[30rem] overflow-y-auto">
-        {articles.map((article, i) => (
-          <>
-            <ArticleHeadline
-              key={article.id}
-              article={article}
-              onClick={() => setSelected(article.id)}
-            />
-            {i < articles.length - 1 && (
-              <hr className="border border-white/20" />
-            )}
-          </>
-        ))}
+      <div className="flex flex-col gap-2 p-4 max-h-[30rem] h-full overflow-y-auto">
+        {articles.length === 0 ? (
+          <div className="h-full flex items-center justify-center opacity-50 my-24">
+            No articles yet...
+          </div>
+        ) : (
+          articles.map((article, i) => (
+            <>
+              <ArticleHeadline
+                key={article.id}
+                article={article}
+                onClick={() => setSelected(article.id)}
+              />
+            </>
+          ))
+        )}
       </div>
     </div>
   );

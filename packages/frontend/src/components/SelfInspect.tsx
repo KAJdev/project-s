@@ -1,10 +1,10 @@
 import { useGame } from "@/lib/games";
-import { scanStore, usePlayer } from "@/lib/scan";
+import { scanStore, usePlayer, useScan } from "@/lib/scan";
 import { TickIndicator } from "./TickIndicator";
 
 export function SelfInspect() {
   const self = usePlayer();
-  const scan = scanStore((state) => state.scan);
+  const scan = useScan();
   const game = useGame(scan?.game);
 
   if (!self) {

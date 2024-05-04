@@ -6,6 +6,8 @@ import { gameStore, useGame } from "./games";
 import { mapState } from "./map";
 import { getHyperSpaceDistance } from "./players";
 import { distance } from "./utils";
+import { shallow } from "zustand/shallow";
+import { useShallow } from "zustand/react/shallow";
 
 export type Technology =
   | "scanning"
@@ -313,8 +315,8 @@ export async function upgradeStar(starId: ID, type: StarAspect) {
   return newStar;
 }
 
-export function useScan(gameId: ID | undefined) {
-  const scan = scanStore((state) => state.scan);
+export function useGameScan(gameId: ID | undefined) {
+  const scan = scanStore(useShallow((state) => state.scan));
   useEffect(() => {
     if (!gameId || scan?.game === gameId) return;
     fetchScan(gameId);
@@ -324,8 +326,12 @@ export function useScan(gameId: ID | undefined) {
   return scan;
 }
 
+export function useScan() {
+  return scanStore(useShallow((state) => state.scan));
+}
+
 export function usePlayer() {
-  const scan = scanStore((state) => state.scan);
+  const scan = useScan();
   const user = useSelf();
   return useMemo(
     () => scan?.players.find((p) => p.user === user?.id),
@@ -334,29 +340,29 @@ export function usePlayer() {
 }
 
 export function useSpecificPlayer(playerId: ID | undefined | null) {
-  const scan = scanStore((state) => state.scan);
+  const scan = useScan();
   return scan?.players.find((p) => p.id === playerId);
 }
 
 export function usePlayers(ids: ID[]) {
-  const scan = scanStore((state) => state.scan);
+  const scan = useScan();
   return scan?.players.filter((p) => ids.includes(p.id)) || ([] as Player[]);
 }
 
 export function useStar(starId: ID) {
-  const scan = scanStore((state) => state.scan);
+  const scan = useScan();
   return scan?.stars.find((s) => s.id === starId);
 }
 
 export function useStars(ids: ID[]) {
-  const scan = scanStore((state) => state.scan);
+  const scan = useScan();
   return ids
     .map((id) => scan?.stars.find((s) => s.id === id))
     .filter(exists) as Star[];
 }
 
 export function useCarrier(carrierId: ID | undefined | null) {
-  const scan = scanStore((state) => state.scan);
+  const scan = useScan();
   return useMemo(
     () => scan?.carriers.find((c) => c.id === carrierId),
     [scan, carrierId]
@@ -364,7 +370,7 @@ export function useCarrier(carrierId: ID | undefined | null) {
 }
 
 export function useCarriers(ids: ID[]) {
-  const scan = scanStore((state) => state.scan);
+  const scan = useScan();
   return scan?.carriers.filter((c) => ids.includes(c.id)) || ([] as Carrier[]);
 }
 
@@ -372,7 +378,7 @@ export function useCarriersAround(
   position: { x: number; y: number } | undefined,
   d: number = 0.2
 ): Carrier[] {
-  const carriers = scanStore((state) => state.scan?.carriers);
+  const carriers = useScan()?.carriers;
   return useMemo(() => {
     if (!position) return [];
     return (
@@ -380,6 +386,20 @@ export function useCarriersAround(
       ([] as Carrier[])
     );
   }, [carriers, position, d]);
+}
+
+export function useStarsAround(
+  position: { x: number; y: number } | undefined,
+  d: number = 0.2
+): Star[] {
+  const stars = useScan()?.stars;
+  return useMemo(() => {
+    if (!position) return [];
+    return (
+      stars?.filter((s) => distance(s.position, position) <= d) ||
+      ([] as Star[])
+    );
+  }, [stars, position, d]);
 }
 
 export function getStarCosts(star: Star, player: Player) {
@@ -406,7 +426,7 @@ export function useStarCosts(starId: ID | undefined): {
   science: number;
   warp_gate: number;
 } {
-  const scan = scanStore((state) => state.scan);
+  const scan = useScan();
   const game = useGame(scan?.game);
   const star = scan?.stars.find((s) => s.id === starId);
   const player = scan?.players.find((p) => p.id === star?.occupier);

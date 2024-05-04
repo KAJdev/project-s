@@ -6,7 +6,13 @@ import {
   useGetEarliestMessage,
   useLastMessage,
 } from "@/lib/messages";
-import { Player, scanStore, usePlayer, useSpecificPlayer } from "@/lib/scan";
+import {
+  Player,
+  scanStore,
+  usePlayer,
+  useScan,
+  useSpecificPlayer,
+} from "@/lib/scan";
 import { ChatBar } from "../Theme/ChatBar";
 import { Message as MessageComponent } from "../Theme/Message";
 import { request } from "@/lib/api";
@@ -76,7 +82,7 @@ function ChannelLayout({
 }) {
   const player = usePlayer();
   const recipient = useSpecificPlayer(playerId);
-  const scan = scanStore((state) => state.scan);
+  const scan = useScan();
   const channelId = getMessageChannel({
     author: player.id,
     recipient: playerId,
@@ -167,7 +173,7 @@ function ChannelLayout({
 }
 
 export function Chat() {
-  const scan = scanStore((state) => state.scan);
+  const scan = useScan();
   const [player, setPlayer] = useState<ID | "global" | null>(null);
 
   if (player) {
