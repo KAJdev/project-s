@@ -1,21 +1,9 @@
 /* eslint-disable jsx-a11y/alt-text */
 import { useImage } from "@/lib/image";
-import { SelectionObject, useFlightPlanningInfo } from "@/lib/map";
-import {
-  addToCarrierDestination,
-  scanStore,
-  useCarriersAround,
-  useScan,
-} from "@/lib/scan";
+import { SelectionObject } from "@/lib/map";
+import { useScan } from "@/lib/scan";
 import { Html } from "react-konva-utils";
 import { Arc, Circle, Image } from "react-konva";
-import { DollarSign, Factory, Microscope, Rocket } from "lucide-react";
-import { Tooltip } from "../Theme/Tooltip";
-import { KonvaEventObject } from "konva/lib/Node";
-
-function lerp(a: number, b: number, t: number) {
-  return a + (b - a) * t;
-}
 
 function stickyNumberFromUUID(uuid: string, max: number) {
   let sum = 0;
@@ -26,7 +14,7 @@ function stickyNumberFromUUID(uuid: string, max: number) {
 }
 
 export function useStarImagePath(starId: ID) {
-  const starType = stickyNumberFromUUID(starId, 1);
+  const starType = stickyNumberFromUUID(starId, 2);
   return `/star${starType}.png`;
 }
 
@@ -34,25 +22,8 @@ export function useStarImage(starId: ID) {
   return useImage(useStarImagePath(starId));
 }
 
-function StarName({
-  name,
-  color,
-  resources,
-  ships,
-}: {
-  name: string | null;
-  color: string | null;
-  resources: {
-    economy: number;
-    industry: number;
-    science: number;
-  } | null;
-  ships: number | null;
-}) {
+function StarName({ name }: { name: string | null }) {
   const ref = React.useRef(null);
-  if (!color) {
-    color = "#888888";
-  }
   return (
     <div
       className="flex flex-col items-center"
@@ -66,54 +37,12 @@ function StarName({
         <p
           className="px-2"
           style={{
-            borderColor: color,
+            borderColor: "#888888",
           }}
           ref={ref}
         >
           {name}
         </p>
-      )}
-      {exists(ships) && (
-        <p
-          className="px-2 w-fit -mt-[2px] border-t-0 flex items-center gap-1"
-          style={{
-            borderColor: color,
-          }}
-          ref={ref}
-        >
-          <Rocket size={12} fill={color} stroke={color} />
-          {ships}
-        </p>
-      )}
-
-      {resources && (
-        <div
-          className="flex gap-4 px-2 relative select-none"
-          style={{
-            borderColor: color,
-            fontSize: 12,
-          }}
-        >
-          <Tooltip content="Economy" passThroughClassName="translate-y-4">
-            <div className="flex items-center gap-1 pointer-events-auto">
-              <DollarSign size={12} fill={color} stroke={color} />
-              {resources.economy}
-            </div>
-          </Tooltip>
-          <Tooltip content="Industry">
-            <div className="flex items-center gap-1 pointer-events-auto">
-              <Factory size={12} fill={color} stroke={color} />
-              {resources.industry}
-            </div>
-          </Tooltip>
-
-          <Tooltip content="Science" passThroughClassName="translate-y-4">
-            <div className="flex items-center gap-1 pointer-events-auto">
-              <Microscope size={12} fill={color} stroke={color} />
-              {resources.science}
-            </div>
-          </Tooltip>
-        </div>
       )}
     </div>
   );
@@ -160,6 +89,43 @@ function RotatingArcs({
   return arcs;
 }
 
+function OrbitLine({
+  position,
+  radius,
+  zoom,
+}: {
+  position: {
+    x: number;
+    y: number;
+  };
+  radius: number;
+  zoom: number;
+}) {
+  const [offset, setOffset] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setOffset((offset: number) => (offset - 0.0008) % 1);
+    }, 10);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <Circle
+      x={position.x}
+      y={position.y}
+      radius={radius}
+      stroke={"white"}
+      strokeWidth={1 / zoom}
+      dash={[10 / zoom, 5 / zoom]}
+      dashOffset={offset}
+      listening={false}
+      opacity={0.1}
+    />
+  );
+}
+
 export function MapStar({
   starId,
   zoom,
@@ -176,100 +142,44 @@ export function MapStar({
   const img = useStarImage(starId);
   const imgRef = React.useRef(null);
   const [hovered, setHovered] = useState(false);
-  const carriers = useCarriersAround(star?.position, 0.1);
-  const flightPlanInfo = useFlightPlanningInfo(starId);
-
-  const onPressed = useCallback(
-    (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
-      if (flightPlanningFor) {
-        addToCarrierDestination(starId);
-        e.cancelBubble = true;
-      }
-    },
-    [flightPlanningFor, starId]
-  );
+  const orbitingPlanets = scan?.planets.filter((p) => p.orbits === starId);
 
   return useMemo(() => {
     if (!star) {
       return null;
     }
 
-    const owner = scan?.players.find((p) => p.id === star?.occupier);
     const isSelected = selectedEntities.some(
       (e) => e.type === "star" && e.id === starId
     );
 
-    const totalShips =
-      (star?.ships ?? 0) +
-      carriers
-        .filter((c) => c.owner === star?.occupier)
-        .reduce((acc, c) => acc + c.ships, 0);
-
-    const starSize = Math.max(Math.min(0.5, lerp(30, 80, 0 / 50) / zoom), 0.1);
-
-    const color = owner?.color || null;
+    const starSize = Math.max(Math.min(1, 200 / zoom), 0.1);
 
     return (
       <>
-        {zoom > 40 && img ? (
-          <>
-            <Image
-              image={img}
-              ref={imgRef}
-              x={star.position.x - starSize / 2}
-              y={star.position.y - starSize / 2}
-              width={starSize}
-              height={starSize}
-              onMouseEnter={() => setHovered(true)}
-              onMouseLeave={() => setHovered(false)}
-              opacity={flightPlanInfo.outsideRange ? 0.2 : 1}
-              listening={!flightPlanInfo.outsideRange}
-              onMouseUp={onPressed}
-              onTouchEnd={onPressed}
-            />
-            {color && (
-              <>
-                <Arc
-                  x={star.position.x}
-                  y={star.position.y}
-                  innerRadius={starSize / 1.9}
-                  outerRadius={starSize / 1.5}
-                  angle={360}
-                  fill={color}
-                  opacity={0.75}
-                  listening={false}
-                  visible={!flightPlanInfo.outsideRange}
-                />
-                <Arc
-                  x={star.position.x}
-                  y={star.position.y}
-                  innerRadius={starSize / 100}
-                  outerRadius={starSize / 2.3}
-                  angle={360}
-                  fill={color}
-                  opacity={0.3}
-                  listening={false}
-                  visible={!flightPlanInfo.outsideRange}
-                />
-              </>
-            )}
-          </>
-        ) : (
-          <Circle
-            x={star.position.x}
-            y={star.position.y}
-            radius={starSize / 2}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-            fill={owner?.color || "gray"}
-            opacity={flightPlanInfo.outsideRange ? 0.2 : 1}
-            listening={!flightPlanInfo.outsideRange}
-            onMouseUp={onPressed}
-            onTouchEnd={onPressed}
+        {orbitingPlanets?.map((planet) => (
+          <OrbitLine
+            key={planet.id}
+            position={star.position}
+            radius={planet.distance}
+            zoom={zoom}
           />
-        )}
+        ))}
 
-        {(hovered || isSelected) && !flightPlanInfo.outsideRange && (
+        <Image
+          image={img}
+          ref={imgRef}
+          x={star.position.x - starSize / 2}
+          y={star.position.y - starSize / 2}
+          width={starSize}
+          height={starSize}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          opacity={flightPlanningFor ? 0.2 : 1}
+          listening={false}
+        />
+
+        {(hovered || isSelected) && !flightPlanningFor && (
           <RotatingArcs
             x={star.position.x}
             y={star.position.y}
@@ -279,12 +189,12 @@ export function MapStar({
           />
         )}
 
-        {(hovered || isSelected || zoom > 50) && (
+        {(hovered || isSelected || zoom > 50) && !flightPlanningFor && (
           <>
             <Html
               groupProps={{
                 x: star.position.x,
-                y: star.position.y + starSize / 1.1,
+                y: star.position.y + starSize / 1.8,
                 scale: { x: 1 / zoom, y: 1 / zoom },
                 listening: false,
               }}
@@ -292,49 +202,11 @@ export function MapStar({
                 style: {
                   pointerEvents: "none",
                   zIndex: isSelected || hovered ? 100 : 0,
-                  opacity: flightPlanInfo.outsideRange ? 0.2 : 1,
                 },
               }}
             >
-              <StarName
-                name={zoom > 175 ? star.name : null}
-                color={color}
-                ships={exists(star.ships) && star.occupier ? totalShips : null}
-                resources={null}
-              />
+              <StarName name={star.name} />
             </Html>
-            {(hovered || isSelected || zoom > 175) && star.occupier && (
-              <Html
-                groupProps={{
-                  x: star.position.x,
-                  y: star.position.y - starSize / 0.7,
-                  scale: { x: 1 / zoom, y: 1 / zoom },
-                  listening: false,
-                }}
-                divProps={{
-                  style: {
-                    pointerEvents: "none",
-                    zIndex: isSelected || hovered ? 100 : 0,
-                    opacity: flightPlanInfo.outsideRange ? 0.2 : 1,
-                  },
-                }}
-              >
-                <StarName
-                  name={null}
-                  ships={null}
-                  color={color}
-                  resources={
-                    star.resources && zoom > 75
-                      ? {
-                          economy: star.economy!,
-                          industry: star.industry!,
-                          science: star.science!,
-                        }
-                      : null
-                  }
-                />
-              </Html>
-            )}
           </>
         )}
 
@@ -359,12 +231,10 @@ export function MapStar({
       </>
     );
   }, [
-    carriers,
-    flightPlanInfo.outsideRange,
     flightPlanningFor,
     hovered,
     img,
-    scan?.players,
+    orbitingPlanets,
     selectedEntities,
     star,
     starId,

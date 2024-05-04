@@ -18,17 +18,20 @@ export type Technology =
   | "banking"
   | "manufacturing";
 
-export type StarAspect = "economy" | "industry" | "science";
+export type PlanetAspect = "economy" | "industry" | "science";
 
-type BaseStar = {
+type BasePlanet = {
   id: ID;
   game: ID;
+  orbits: ID;
+  distance: number;
+  theta: number;
   position: { x: number; y: number };
   name: string;
   occupier: ID | null;
 };
 
-type StarScanData = {
+type PlanetScanData = {
   ships: number;
   ship_accum: number;
   economy: number | null;
@@ -38,9 +41,16 @@ type StarScanData = {
   warp_gate: boolean | null;
 };
 
-export type Star = BaseStar & Partial<StarScanData>;
+export type Planet = BasePlanet & Partial<PlanetScanData>;
 
-export type Destination = { star: ID; action: "collect" | "drop" | null };
+export type Star = {
+  id: ID;
+  game: ID;
+  position: { x: number; y: number };
+  name: string;
+};
+
+export type Destination = { planet: ID; action: "collect" | "drop" | null };
 
 export type Carrier = {
   id: ID;
@@ -68,6 +78,7 @@ export type Player = {
 export type Scan = {
   game: ID;
   stars: Star[];
+  planets: Planet[];
   carriers: Carrier[];
   players: Player[];
 };
@@ -90,7 +101,7 @@ export async function fetchScan(gameId: ID) {
 }
 
 export async function buildCarrier(
-  starId: ID,
+  planetId: ID,
   ships: number = 1,
   name?: string
 ) {
@@ -98,7 +109,7 @@ export async function buildCarrier(
   if (!scan) return;
   const newcarrier = await request<Carrier>(`/games/${scan.game}/carriers`, {
     method: "POST",
-    body: { star_id: starId, ships, name },
+    body: { planet_id: planetId, ships, name },
   });
 
   if (!newcarrier) return;
@@ -107,8 +118,10 @@ export async function buildCarrier(
     ...scan,
     carriers: [...scan.carriers, newcarrier],
     // subtract ships from star
-    stars: scan.stars.map((s) =>
-      s.id === starId && exists(s.ships) ? { ...s, ships: s.ships! - ships } : s
+    planets: scan.planets.map((p) =>
+      p.id === planetId && exists(p.ships)
+        ? { ...p, ships: p.ships! - ships }
+        : p
     ),
     // subtract $25
     players: scan.players.map((p) =>
@@ -147,13 +160,13 @@ export async function transferShips(
           ? { ...c, ships: c.ships + (c.id === fromEntity ? -amount : amount) }
           : c
       ),
-      stars: scan.stars.map((s) =>
-        [fromEntity, toEntity].includes(s.id) && exists(s.ships)
+      planets: scan.planets.map((p) =>
+        [fromEntity, toEntity].includes(p.id) && exists(p.ships)
           ? {
-              ...s,
-              ships: s.ships! + (s.id === fromEntity ? -amount : amount),
+              ...p,
+              ships: p.ships! + (p.id === fromEntity ? -amount : amount),
             }
-          : s
+          : p
       ),
     });
   }
@@ -214,7 +227,7 @@ export async function updateCarrier(
   return updatedCarrier;
 }
 
-export async function addToCarrierDestination(starId: ID) {
+export async function addToCarrierDestination(planetId: ID) {
   const scan = scanStore.getState().scan;
   if (!scan) return;
 
@@ -227,9 +240,9 @@ export async function addToCarrierDestination(starId: ID) {
   const lastDestination =
     carrier.destination_queue[carrier.destination_queue.length - 1];
   const lastPosition =
-    scan.stars.find((s) => s.id === lastDestination?.star)?.position ??
+    scan.stars.find((s) => s.id === lastDestination?.planet)?.position ??
     carrier.position;
-  const newDestination = scan.stars.find((s) => s.id === starId)?.position!;
+  const newDestination = scan.stars.find((s) => s.id === planetId)?.position!;
   const owner = scan.players.find((p) => p.id === carrier.owner);
   if (!owner) return;
 
@@ -238,7 +251,7 @@ export async function addToCarrierDestination(starId: ID) {
 
   const newCarrier = await updateCarrier(carrier.id, {
     destinations: carrier.destination_queue.concat({
-      star: starId,
+      planet: planetId,
       action: "collect",
     }),
   });
@@ -280,39 +293,39 @@ export async function removeCarrierDestination(carrierId: ID) {
   return newCarrier;
 }
 
-export async function upgradeStar(starId: ID, type: StarAspect) {
+export async function upgradePlanet(planetId: ID, type: PlanetAspect) {
   const scan = scanStore.getState().scan;
   if (!scan) return;
 
-  const star = scan.stars.find((s) => s.id === starId);
-  if (!star) return;
+  const planet = scan.planets.find((p) => p.id === planetId);
+  if (!planet) return;
 
-  const player = scan.players.find((p) => p.id === star.occupier);
+  const player = scan.players.find((p) => p.id === planet.occupier);
   if (!player) return;
 
-  const cost = getStarCosts(star, player);
+  const cost = getPlanetCosts(planet, player);
 
   if (player.cash! < cost[type]) return;
 
-  const newStar = await request<Star>(
-    `/games/${scan.game}/stars/${starId}/upgrade`,
+  const newPlanet = await request<Planet>(
+    `/games/${scan.game}/planets/${planetId}/upgrade`,
     {
       method: "PATCH",
       body: { aspect: type },
     }
   );
 
-  if (!newStar) return;
+  if (!newPlanet) return;
 
   scanStore.getState().setScan({
     ...scan,
-    stars: scan.stars.map((s) => (s.id === starId ? newStar : s)),
+    planets: scan.planets.map((p) => (p.id === planetId ? newPlanet : p)),
     players: scan.players.map((p) =>
       p.id === player.id ? { ...p, cash: p.cash! - cost[type] } : p
     ),
   });
 
-  return newStar;
+  return newPlanet;
 }
 
 export function useGameScan(gameId: ID | undefined) {
@@ -361,6 +374,18 @@ export function useStars(ids: ID[]) {
     .filter(exists) as Star[];
 }
 
+export function usePlanet(planetId: ID) {
+  const scan = useScan();
+  return scan?.planets.find((p) => p.id === planetId);
+}
+
+export function usePlanets(ids: ID[]) {
+  const scan = useScan();
+  return ids
+    .map((id) => scan?.planets.find((p) => p.id === id))
+    .filter(exists) as Planet[];
+}
+
 export function useCarrier(carrierId: ID | undefined | null) {
   const scan = useScan();
   return useMemo(
@@ -402,25 +427,44 @@ export function useStarsAround(
   }, [stars, position, d]);
 }
 
-export function getStarCosts(star: Star, player: Player) {
+export function usePlanetsAround(
+  position: { x: number; y: number } | undefined,
+  d: number = 0.2
+): Planet[] {
+  const planets = useScan()?.planets;
+  return useMemo(() => {
+    if (!position) return [];
+    return (
+      planets?.filter((p) => distance(p.position, position) <= d) ||
+      ([] as Planet[])
+    );
+  }, [planets, position, d]);
+}
+
+export function useOrbitingPlanets(starId: ID) {
+  const scan = useScan();
+  return scan?.planets.filter((p) => p.orbits === starId) || ([] as Planet[]);
+}
+
+export function getPlanetCosts(planet: Planet, player: Player) {
   const terraforming_level = player.research_levels.terraforming;
-  const resources = star?.resources || 0;
+  const resources = planet?.resources || 0;
 
   const economy =
-    (2.5 * 2 * (star?.economy! + 1)) /
+    (2.5 * 2 * (planet?.economy! + 1)) /
     ((resources + 5 * terraforming_level) / 100);
   const industry =
-    (5 * 2 * (star?.industry! + 1)) /
+    (5 * 2 * (planet?.industry! + 1)) /
     ((resources + 5 * terraforming_level) / 100);
   const science =
-    (20 * 2 * (star?.science! + 1)) /
+    (20 * 2 * (planet?.science! + 1)) /
     ((resources + 5 * terraforming_level) / 100);
   const warp_gate = (50 * 2 * 100) / (resources + 5 * terraforming_level);
 
   return { economy, industry, science, warp_gate };
 }
 
-export function useStarCosts(starId: ID | undefined): {
+export function usePlanetCosts(planetId: ID | undefined): {
   economy: number;
   industry: number;
   science: number;
@@ -428,13 +472,13 @@ export function useStarCosts(starId: ID | undefined): {
 } {
   const scan = useScan();
   const game = useGame(scan?.game);
-  const star = scan?.stars.find((s) => s.id === starId);
-  const player = scan?.players.find((p) => p.id === star?.occupier);
+  const planet = scan?.planets.find((p) => p.id === planetId);
+  const player = scan?.players.find((p) => p.id === planet?.occupier);
 
-  if (!game || !player || !star)
+  if (!game || !player || !planet)
     return { economy: 0, industry: 0, science: 0, warp_gate: 0 };
 
-  return getStarCosts(star!, player);
+  return getPlanetCosts(planet!, player);
 }
 
 // returns the time it takes to travel from one point/Star to another in hours
@@ -451,15 +495,15 @@ export function getETA(
   let speed = game.settings.carrier_speed;
   // check if the two are stars with warp gates
   if (typeof to === "string") {
-    const toStar = scan.stars.find((s) => s.id === to);
-    if (toStar?.warp_gate) {
+    const toPlanet = scan.planets.find((p) => p.id === to);
+    if (toPlanet?.warp_gate) {
       speed = game.settings.warp_speed;
     }
-    to = toStar?.position!;
+    to = toPlanet?.position!;
   }
 
   if (typeof from === "string") {
-    from = scan.stars.find((s) => s.id === from)?.position!;
+    from = scan.planets.find((p) => p.id === from)?.position!;
   }
 
   return distance(from, to) / speed;

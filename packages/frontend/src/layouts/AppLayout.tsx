@@ -1,15 +1,11 @@
-import { Outlet, useLocation, useParams, useRoutes } from "react-router-dom";
+import { Outlet, useParams, useRoutes } from "react-router-dom";
 import { Page as PageComponent } from "@/components/Theme/Page";
-import { SidebarLayout } from "@/layouts/SidebarLayout";
-import { Account } from "./Account";
 import { useGateway } from "@/lib/gateway";
-import { ChannelLayout } from "./ChannelLayout";
 import { useToken } from "@/lib/token";
 import { useRouter } from "next/router";
 import { useFetchUser } from "@/lib/users";
 import { HomePage } from "./HomePage";
 import { GameLayout } from "./GameLayout";
-import { Sparkle } from "lucide-react";
 import { Galaxy } from "@/components/Icons/Galaxy";
 import { NewGameLayout } from "./NewGameLayout";
 import { StarBackground } from "@/components/Theme/StarBackground";

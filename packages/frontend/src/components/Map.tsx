@@ -2,7 +2,7 @@ import { Game } from "@/lib/games";
 import { Scan, useGameScan, useScan } from "@/lib/scan";
 import { KonvaNodeComponent, Layer, Stage, StageProps } from "react-konva";
 import { useWindowSize, usePinchZoom } from "react-use";
-import { MapStar } from "./Map/Star";
+import { MapPlanet } from "./Map/Planet";
 import { MapState, mapState, useZoom, zoomState } from "@/lib/map";
 import { InnerScanCircle, OuterScanCircle } from "./Map/ScanCircle";
 import { UseKeyOptions } from "react-use/lib/useKey";
@@ -13,6 +13,7 @@ import { distance } from "@/lib/utils";
 import { ZoomState } from "react-use/lib/usePinchZoom";
 import { useShallow } from "zustand/react/shallow";
 import { KonvaEventObject } from "konva/lib/Node";
+import { MapStar } from "./Map/Star";
 
 function Entities() {
   const scan = useScan();
@@ -22,29 +23,38 @@ function Entities() {
     () => (
       <>
         <Layer listening={false}>
-          {scan?.stars.map((star) => (
+          {scan?.planets.map((planet) => (
             <HyperspaceCircle
-              key={keys(star.id, "hyperspace")}
-              starId={star.id}
+              key={keys(planet.id, "hyperspace")}
+              planetId={planet.id}
             />
           ))}
-          {scan?.stars.map((star) => (
+          {scan?.planets.map((planet) => (
             <OuterScanCircle
-              key={keys(star.id, "outerscan")}
-              starId={star.id}
+              key={keys(planet.id, "outerscan")}
+              planetId={planet.id}
               zoom={zoom}
             />
           ))}
-          {scan?.stars.map((star) => (
+          {scan?.planets.map((planet) => (
             <InnerScanCircle
-              key={keys(star.id, "innerscan")}
-              starId={star.id}
+              key={keys(planet.id, "innerscan")}
+              planetId={planet.id}
             />
           ))}
         </Layer>
         <Layer>
           {scan?.carriers.map((carrier) => (
             <CarrierLines key={carrier.id} carrierId={carrier.id} />
+          ))}
+          {scan?.planets.map((planet) => (
+            <MapPlanet
+              key={planet.id}
+              planetId={planet.id}
+              zoom={zoom}
+              flightPlanningFor={map.flightPlanningFor}
+              selectedEntities={map.selected}
+            />
           ))}
           {scan?.stars.map((star) => (
             <MapStar
@@ -55,6 +65,7 @@ function Entities() {
               selectedEntities={map.selected}
             />
           ))}
+
           {scan?.carriers.map((carrier) => (
             <MapCarrier
               key={carrier.id}
@@ -66,7 +77,14 @@ function Entities() {
         </Layer>
       </>
     ),
-    [map.flightPlanningFor, map.selected, scan?.carriers, scan?.stars, zoom]
+    [
+      map.flightPlanningFor,
+      map.selected,
+      scan?.carriers,
+      scan?.planets,
+      scan?.stars,
+      zoom,
+    ]
   );
 }
 
@@ -145,6 +163,7 @@ export function MapStage({ game }: { game: Game }) {
         const entities = [
           ...(scan.stars.map((s) => ({ ...s, type: "star" })) as any),
           ...(scan.carriers.map((c) => ({ ...c, type: "carrier" })) as any),
+          ...(scan.planets.map((s) => ({ ...s, type: "planet" })) as any),
         ]
           .filter((e) => distance(e.position, transformedPointer) * zoom < 20)
           .sort((a, b) => {

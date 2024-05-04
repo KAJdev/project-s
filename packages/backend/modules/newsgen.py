@@ -1,7 +1,7 @@
 from os import getenv
 import random
 import re
-from modules.db import Event, News, Star, Game
+from modules.db import Event, News, Planet, Star, Game
 from modules.utils import gpt, print
 
 ARTICLE_PROMPT = """You are a galactic news outlet ({outlet}) writing about politics, war, and life in the galaxy. There are {player_count} major states occupying the inhabited systems:
@@ -72,7 +72,7 @@ OUTLET_NAMES = [
 ]
 
 
-async def create_article(game: Game, event: Event, stars: list[Star]):
+async def create_article(game: Game, event: Event, planets: list[Planet]):
     if not getenv("OPENAI_TOKEN", None):
         print("No OpenAI token set, skipping article generation")
         return
@@ -81,8 +81,12 @@ async def create_article(game: Game, event: Event, stars: list[Star]):
     outlet = random.choice(OUTLET_NAMES)
 
     for player in game.members:
-        player_stars = len(list(filter(lambda star: star.occupier == player.id, stars)))
-        player_strings.append(f"{player.name} - {player_stars}/{len(stars)} systems")
+        player_planets = len(
+            list(filter(lambda planet: planet.occupier == player.id, planets))
+        )
+        player_strings.append(
+            f"{player.name} - {player_planets}/{len(planets)} planets"
+        )
 
     print(f"Generating article for event: {event.type}")
 
@@ -145,7 +149,7 @@ async def create_article(game: Game, event: Event, stars: list[Star]):
     return article
 
 
-async def create_misc_article(game: Game, stars: list[Star]):
+async def create_misc_article(game: Game, planets: list[Planet]):
     if not getenv("OPENAI_TOKEN", None):
         print("No OpenAI token set, skipping article generation")
         return
@@ -154,8 +158,12 @@ async def create_misc_article(game: Game, stars: list[Star]):
     outlet = random.choice(OUTLET_NAMES)
 
     for player in game.members:
-        player_stars = len(list(filter(lambda star: star.occupier == player.id, stars)))
-        player_strings.append(f"{player.name} - {player_stars}/{len(stars)} systems")
+        player_planets = len(
+            list(filter(lambda planet: planet.occupier == player.id, planets))
+        )
+        player_strings.append(
+            f"{player.name} - {player_planets}/{len(planets)} planets"
+        )
 
     topic = random.choice(OFF_NEWS_CYCLE_TOPICS)
 

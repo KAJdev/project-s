@@ -58,8 +58,8 @@ export function NewGameLayout() {
               type="number"
               label="Stars Per Player"
               value={gameForm.settings.stars_per_player}
-              min={8}
-              max={100}
+              min={3}
+              max={16}
               onChange={(e) =>
                 setGameForm({
                   ...gameForm,
@@ -71,8 +71,8 @@ export function NewGameLayout() {
             {/* star victory percentage */}
             <Input
               type="number"
-              label="Star Victory Percentage"
-              value={gameForm.settings.star_victory_percentage}
+              label="Victory Percentage"
+              value={gameForm.settings.victory_percentage}
               icon="%"
               min={1}
               max={100}

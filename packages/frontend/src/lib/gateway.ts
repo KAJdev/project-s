@@ -140,7 +140,7 @@ export function useGateway() {
           break;
         }
         case GatewayOpcode.MESSAGE_CREATE: {
-          if (data.d.owner === userStore.getState().user?.id) {
+          if (data.d.author === userStore.getState().user?.id) {
             return;
           }
 

@@ -9,7 +9,7 @@ import {
   usePlayers,
   useSpecificPlayer,
   useStar,
-  useStarCosts,
+  usePlanetCosts,
 } from "@/lib/scan";
 import { Field, Inspector } from "./Inspector";
 import { Button } from "./Theme/Button";

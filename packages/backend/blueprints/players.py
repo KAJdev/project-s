@@ -129,19 +129,21 @@ async def create_statement(request: Request, game_id: str):
 async def player_tick(game: Game, stars: list[Star], hourly=False):
     is_production_tick = hourly and time.gmtime().tm_hour == 2
 
+    planets = [p for s in stars for p in s.planets]
+
     for player in game.members:
         if hourly:
-            player.do_research(game, stars)
-        player.do_economy(stars)
+            player.do_research(game, planets)
+        player.do_economy(planets)
 
         # check if its midnight UTC
         if is_production_tick:
-            player.do_production(stars)
+            player.do_production(planets)
 
         await player.save_changes()
 
     if is_production_tick:
-        total_cash_created = sum([s.economy for s in stars]) * 10
+        total_cash_created = sum([p.economy for p in planets]) * 10
 
         evnt = Event(
             game=game.id,
@@ -153,4 +155,4 @@ async def player_tick(game: Game, stars: list[Star], hourly=False):
 
         await evnt.save()
 
-        await newsgen.create_article(game, evnt, stars)
+        await newsgen.create_article(game, evnt, planets)

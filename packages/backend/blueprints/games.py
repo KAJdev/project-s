@@ -3,7 +3,19 @@ import random
 from beanie import WriteRules
 from sanic import Blueprint, Request, json, exceptions
 from sanic_ext import openapi
-from modules.db import Carrier, GameSettings, Message, Player, Game, Star, distance
+from modules.db import (
+    Carrier,
+    Census,
+    Event,
+    GameSettings,
+    Message,
+    News,
+    Planet,
+    Player,
+    Game,
+    Star,
+    distance,
+)
 from modules.auth import authorized
 from modules import gateway
 from modules.worldgen import generate_star_name, generate_star_positions
@@ -25,54 +37,26 @@ async def generate_map(game: Game):
     stars: list[Star] = []
 
     for member, position in zip(game.members, player_stars):
-        stars.append(
-            Star(
-                position=position,
-                name=generate_star_name(),
-                game=game.id,
-                occupier=member.id,
-                resources=50,
-                ships=game.settings.starting_ships,
-                economy=game.settings.starting_economy,
-                industry=game.settings.starting_industry,
-                science=game.settings.starting_science,
-            )
+        star = Star(
+            position=position,
+            name=generate_star_name(),
+            game=game.id,
         )
-
-        # now add some stars for each player that are the nearest normal stars
-        for i in range(game.settings.starting_stars - 1):
-            closest_star = min(
-                normal_stars,
-                key=lambda star: distance((star.x, star.y), (position.x, position.y)),
-            )
-
-            stars.append(
-                Star(
-                    position=closest_star,
-                    name=generate_star_name(),
-                    game=game.id,
-                    occupier=member.id,
-                    resources=random.randint(1, 50),
-                    ships=game.settings.starting_ships,
-                )
-            )
-
-            normal_stars.remove(closest_star)
+        star.gen_player_system(game, member)
+        stars.append(star)
 
     # now add the rest of the normal stars
     for star in normal_stars:
-        stars.append(
-            Star(
-                position=star,
-                name=generate_star_name(),
-                game=game.id,
-                resources=random.randint(1, 50),
-            )
+        star = Star(
+            position=star,
+            name=generate_star_name(),
+            game=game.id,
         )
+        star.gen_system()
+        stars.append(star)
 
-    for s in stars:
-        s.gen_planets()
-    await Star.insert_many(stars, link_rule=WriteRules.WRITE)
+    for star in stars:
+        await star.save(link_rule=WriteRules.WRITE)
 
 
 @bp.route("/v1/games", methods=["GET"])
@@ -276,6 +260,10 @@ async def restart_game(request: Request, game_id: str):
     game.started_at = datetime.now(UTC)
     game.winner = None
     await Star.find(Star.game == game.id).delete_many()
+    await Event.find(Event.game == game.id).delete_many()
+    await Census.find(Census.game == game.id).delete_many()
+    await News.find(News.game == game.id).delete_many()
+    await Planet.find(Planet.game == game.id).delete_many()
     await Message.find(Message.game == game.id).delete_many()
     await Carrier.find(Carrier.game == game.id).delete_many()
     await Player.find(Player.game == game.id).update_many(

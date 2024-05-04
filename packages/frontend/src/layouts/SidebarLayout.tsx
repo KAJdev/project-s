@@ -39,7 +39,7 @@ export function SidebarLayout() {
           className="rounded secondary-panel-interactive items-center p-3 flex gap-3 mb-4"
           onClick={() => openModal("profileSettings")}
         >
-          <Avatar variant="small" user={user} />
+          <Avatar variant="small" />
           <p className="truncate select-none">
             {user?.display_name || user?.username}
           </p>

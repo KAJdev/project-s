@@ -2,7 +2,16 @@ import asyncio
 from datetime import datetime, UTC
 from sanic import Blueprint, Request, json, exceptions
 from sanic_ext import openapi
-from modules.db import Carrier, GameSettings, Message, Player, Game, Star, distance
+from modules.db import (
+    Carrier,
+    GameSettings,
+    Message,
+    Planet,
+    Player,
+    Game,
+    Star,
+    distance,
+)
 from modules.auth import authorized
 from modules import gateway
 import aiocron
@@ -19,6 +28,7 @@ class ScanResponse(TypedDict):
     game: str
     players: list[Player]
     stars: list[Star]
+    planets: list[Planet]
     carriers: list[Carrier]
 
 
@@ -49,13 +59,14 @@ async def scan_game(
         game_id = game.id
 
     players = await Player.find(Player.game == game_id).to_list(None)
-    stars = await Star.find(Star.game == game_id).to_list(None)
+    stars = await Star.find(Star.game == game_id, fetch_links=True).to_list(None)
+    planets = [p for s in stars for p in s.planets]
     carriers = await Carrier.find(Carrier.game == game_id).to_list(None)
 
     current_player = next(
         p for p in players if ((p.user == user_id) if user_id else (p.id == player_id))
     )
-    player_stars = [s for s in stars if s.occupier == current_player.id]
+    player_planets = [p for p in planets if p.occupier == current_player.id]
     scan_distance = current_player.get_scan_distance()
 
     scan: ScanResponse = {
@@ -64,7 +75,8 @@ async def scan_game(
             (p.dict() if p.id == current_player.id else p.dict_not_self())
             for p in players
         ],
-        "stars": [],
+        "stars": [star.dict() for star in stars],
+        "planets": [],
         "carriers": [],
     }
 
@@ -74,28 +86,29 @@ async def scan_game(
         for c in carriers
         if (
             any(
-                distance((c.position.x, c.position.y), (s.position.x, s.position.y))
+                distance((c.position.x, c.position.y), (p.position.x, p.position.y))
                 <= scan_distance
-                for s in player_stars
+                for p in player_planets
             )
             or c.owner == current_player.id
         )
     ]
 
-    for star in stars:
+    for planet in planets:
         if (
             any(
                 distance(
-                    (star.position.x, star.position.y), (s.position.x, s.position.y)
+                    (planet.position.x, planet.position.y),
+                    (p.position.x, p.position.y),
                 )
                 <= scan_distance
-                for s in player_stars
+                for p in player_planets
             )
-            or star.occupier == current_player.id
+            or planet.occupier == current_player.id
         ):
-            scan["stars"].append(star.dict())
+            scan["planets"].append(planet.dict())
         else:
-            scan["stars"].append(star.dict_unscanned())
+            scan["planets"].append(planet.dict_unscanned())
 
     return scan
 

@@ -1,5 +1,5 @@
 import { mapState } from "@/lib/map";
-import { StarInspect } from "./StarInspect";
+import { PlanetInspect } from "./PlanetInspect";
 import { SelfInspect } from "./SelfInspect";
 import { CarrierInspect } from "./CarrierInspect";
 import { Inspector } from "./Inspector";
@@ -9,6 +9,7 @@ import { Research } from "./Tabs/Research";
 import { scanStore } from "@/lib/scan";
 import { Census } from "./Tabs/Census";
 import { Chat } from "./Tabs/Chat";
+import { StarInspect } from "./StarInspector";
 
 const currentTabs = {
   chat: <Chat />,
@@ -46,6 +47,7 @@ export function LeftInspector() {
   const selected = mapState((s) => s.selected);
   const [tab, setTab] = useState<string | null>("research");
 
+  const firstPlanet = selected.find((s) => s.type === "planet");
   const firstStar = selected.find((s) => s.type === "star");
   const carriers = selected.filter((s) => s.type === "carrier");
 
@@ -73,6 +75,7 @@ export function LeftInspector() {
         {carriers.length > 0 && (
           <CarrierInspect carrierIds={carriers.map((c) => c.id)} />
         )}
+        {firstPlanet && <PlanetInspect planetId={firstPlanet.id} />}
         {firstStar && <StarInspect starId={firstStar.id} />}
       </div>
     </Inspector>

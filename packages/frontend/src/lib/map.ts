@@ -4,7 +4,7 @@ import { getHyperSpaceDistance } from "./players";
 import { distance } from "./utils";
 
 export type SelectionObject = {
-  type: "star" | "carrier";
+  type: "planet" | "carrier" | "star";
   id: ID;
 };
 
@@ -53,7 +53,7 @@ export function useZoom() {
   return zoomState((s) => s.zoom);
 }
 
-export function useFlightPlanningInfo(starId: ID): {
+export function useFlightPlanningInfo(planetId: ID): {
   outsideRange: boolean;
   isTarget: boolean;
   isLastTarget: boolean;
@@ -72,13 +72,13 @@ export function useFlightPlanningInfo(starId: ID): {
 
     const latestDestination =
       carrier.destination_queue[carrier.destination_queue.length - 1];
-    const lastDestinationStar = scanStore
+    const lastDestinationPlanet = scanStore
       .getState()
-      .scan?.stars.find((s) => s.id === latestDestination?.star);
-    const thisStar = scanStore
+      .scan?.planets.find((p) => p.id === latestDestination?.planet);
+    const thisPlanet = scanStore
       .getState()
-      .scan?.stars.find((s) => s.id === starId);
-    if (!thisStar)
+      .scan?.planets.find((p) => p.id === planetId);
+    if (!thisPlanet)
       return {
         outsideRange: false,
         isTarget: false,
@@ -87,10 +87,14 @@ export function useFlightPlanningInfo(starId: ID): {
 
     return {
       outsideRange:
-        distance(thisStar.position, (lastDestinationStar ?? carrier).position) >
-        getHyperSpaceDistance(player),
-      isTarget: carrier.destination_queue.some((d: any) => d.star === starId),
-      isLastTarget: latestDestination?.star === starId,
+        distance(
+          thisPlanet.position,
+          (lastDestinationPlanet ?? carrier).position
+        ) > getHyperSpaceDistance(player),
+      isTarget: carrier.destination_queue.some(
+        (d: any) => d.planet === planetId
+      ),
+      isLastTarget: latestDestination?.planet === planetId,
     };
-  }, [flightPlanningFor, carrier, player, starId]);
+  }, [flightPlanningFor, carrier, player, planetId]);
 }

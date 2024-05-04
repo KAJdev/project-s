@@ -12,14 +12,15 @@ export enum GameState {
 
 export type GameSettings = {
   max_players: number;
-  star_victory_percentage: number;
+  victory_percentage: number;
   stars_per_player: number;
   production_cycle_length: number;
   trading_level_cost: number;
   carrier_speed: number;
   warp_speed: number;
 
-  starting_stars: number;
+  starting_systems: number;
+  starting_system_size: number;
   starting_cash: number;
   starting_ships: number;
   starting_economy: number;
@@ -56,14 +57,15 @@ export type Game = {
 
 export const defaultGameSettings: () => GameSettings = () => ({
   max_players: 8,
-  star_victory_percentage: 50,
-  stars_per_player: 24,
+  victory_percentage: 51,
+  stars_per_player: 6,
   production_cycle_length: 24,
   trading_level_cost: 15,
   carrier_speed: 0.3333,
   warp_speed: 1,
 
-  starting_stars: 6,
+  starting_systems: 1,
+  starting_system_size: 6,
   starting_cash: 500,
   starting_ships: 10,
   starting_economy: 5,

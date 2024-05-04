@@ -7,22 +7,24 @@ from blueprints.scan import on_scan
 from modules.db import Carrier, Census, Game, PlayerCensus, Star
 from modules import newsgen
 from modules.utils import print
-from blueprints.stars import star_tick
+from blueprints.planets import planet_tick
 from blueprints.carriers import carrier_tick
 from blueprints.players import player_tick
 
 
 async def game_tick(game: Game, hourly=False):
     print(f"Game tick ({game.name}) {game.id}")
-    stars = await Star.find(Star.game == game.id).to_list(None)
-    await star_tick(game, stars, hourly=hourly)
-    await carrier_tick(game, stars, hourly=hourly)
+    stars = await Star.find(Star.game == game.id, fetch_links=True).to_list(None)
+    carriers = await Carrier.find(Carrier.game == game.id).to_list(None)
+    planets = [p for s in stars for p in s.planets]
+    await planet_tick(game, stars, carriers, hourly=hourly)
+    await carrier_tick(game, stars, carriers, hourly=hourly)
     await player_tick(game, stars, hourly=hourly)
 
     if (
         random.random() < 0.01
     ):  # 1% chance, should be on average 1 article every 100 minutes
-        await newsgen.create_misc_article(game, stars)
+        await newsgen.create_misc_article(game, planets)
 
     # every 10 minutes
     if time.gmtime().tm_min % 10 == 0:
@@ -32,16 +34,20 @@ async def game_tick(game: Game, hourly=False):
             players=[
                 PlayerCensus(
                     player=player.id,
-                    stars=len([s for s in stars if s.occupier == player.id]),
+                    planets=len([p for p in planets if p.occupier == player.id]),
                     carriers=len([c for c in carriers if c.owner == player.id]),
                     cash=int(player.cash),
-                    ships=sum([s.ships for s in stars if s.occupier == player.id])
+                    ships=sum([p.ships for p in planets if p.occupier == player.id])
                     + sum([c.ships for c in carriers if c.owner == player.id]),
                     industry=sum(
-                        [s.industry for s in stars if s.occupier == player.id]
+                        [p.industry for p in planets if p.occupier == player.id]
                     ),
-                    economy=sum([s.economy for s in stars if s.occupier == player.id]),
-                    science=sum([s.science for s in stars if s.occupier == player.id]),
+                    economy=sum(
+                        [p.economy for p in planets if p.occupier == player.id]
+                    ),
+                    science=sum(
+                        [p.science for p in planets if p.occupier == player.id]
+                    ),
                     research_levels=player.research_levels,
                 )
                 for player in game.members

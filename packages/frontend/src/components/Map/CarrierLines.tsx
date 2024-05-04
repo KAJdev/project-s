@@ -8,7 +8,9 @@ export function CarrierLines({ carrierId }: { carrierId: ID }) {
   if (!carrier) return null;
 
   return carrier.destination_queue.map((destinationObj, i) => {
-    const destination = scan?.stars.find((s) => s.id === destinationObj.star);
+    const destination = scan?.planets.find(
+      (p) => p.id === destinationObj.planet
+    );
     if (!destination) return null;
 
     const owner = scan?.players.find((p) => p.id === carrier.owner);
@@ -17,14 +19,14 @@ export function CarrierLines({ carrierId }: { carrierId: ID }) {
     const previousDestination =
       i === 0
         ? carrier
-        : scan?.stars.find(
-            (s) => s.id === carrier.destination_queue[i - 1].star
+        : scan?.planets.find(
+            (p) => p.id === carrier.destination_queue[i - 1].planet
           );
     if (!previousDestination) return null;
 
     return (
       <CarrierLine
-        key={keys(carrierId, destinationObj.star, i)}
+        key={keys(carrierId, destinationObj.planet, i)}
         from={previousDestination}
         to={destination}
         color={owner.color}

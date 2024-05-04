@@ -5,7 +5,7 @@ import { persist } from "zustand/middleware";
 
 export type CensusPlayerPoint = {
   player: string;
-  stars: number;
+  planets: number;
   carriers: number;
   ships: number;
   industry: number;

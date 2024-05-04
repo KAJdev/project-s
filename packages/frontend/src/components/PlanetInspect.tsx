@@ -4,12 +4,14 @@ import {
   Star,
   buildCarrier,
   transferShips,
-  upgradeStar,
+  upgradePlanet,
   useCarriersAround,
   usePlayer,
   useSpecificPlayer,
   useStar,
-  useStarCosts,
+  usePlanetCosts,
+  Planet,
+  usePlanet,
 } from "@/lib/scan";
 import { Field, Inspector } from "./Inspector";
 import { Button } from "./Theme/Button";
@@ -26,15 +28,15 @@ import { Slider } from "./Theme/Slider";
 import { mapState } from "@/lib/map";
 import { useWindowSize } from "react-use";
 
-export function StarAspect({
-  star,
-  starCosts,
+export function PlanetAspect({
+  planet,
+  planetCosts,
   player,
   aspect,
   sublabel,
 }: {
-  star: Star;
-  starCosts: {
+  planet: Planet;
+  planetCosts: {
     economy: number;
     industry: number;
     science: number;
@@ -46,7 +48,7 @@ export function StarAspect({
 }) {
   const [loading, setLoading] = useState(false);
   const { width } = useWindowSize();
-  const num = <p className="text-2xl sm:text-center">{star[aspect]}</p>;
+  const num = <p className="text-2xl sm:text-center">{planet[aspect]}</p>;
   return (
     <Field
       variant={width <= 640 ? "horizontal" : "box"}
@@ -54,21 +56,21 @@ export function StarAspect({
       sublabel={width <= 640 ? num : sublabel}
     >
       {width > 640 && num}
-      {player?.id === star.occupier && (
+      {player?.id === planet.occupier && (
         <Button
           className="w-full justify-center sm:mt-2 pr-0 py-0"
           variant="vibrant"
           loading={loading}
           onClick={() => {
             setLoading(true);
-            upgradeStar(star.id, aspect).finally(() => setLoading(false));
+            upgradePlanet(planet.id, aspect).finally(() => setLoading(false));
           }}
-          disabled={starCosts[aspect] > (player?.cash ?? 0)}
+          disabled={planetCosts[aspect] > (player?.cash ?? 0)}
           inPlaceLoading
         >
           <p className="px-2 py-[0.4rem] w-full text-left">Upgrade</p>
           <p className="px-3 py-[0.4rem] shrink-0 bg-white/10">
-            ${starCosts[aspect].toFixed(0)}
+            ${planetCosts[aspect].toFixed(0)}
           </p>
         </Button>
       )}
@@ -77,14 +79,14 @@ export function StarAspect({
 }
 
 function TransferShips({
-  star,
+  planet,
   carriers,
 }: {
-  star: Star;
+  planet: Planet;
   carriers: Carrier[];
 }) {
   const [transfering, setTransfering] = useState(false);
-  const [from, setFrom] = useState<ID | null>(star.id);
+  const [from, setFrom] = useState<ID | null>(planet.id);
   const [to, setTo] = useState<ID | null>(carriers[0]?.id ?? null);
   const [amount, setAmount] = useState(0);
   const options = carriers
@@ -102,11 +104,11 @@ function TransferShips({
       {
         label: (
           <p className="text-xs flex gap-1.5">
-            <span className="truncate">{star.name}</span>{" "}
-            <span className="opacity-50 shrink-0">({star.ships})</span>
+            <span className="truncate">{planet.name}</span>{" "}
+            <span className="opacity-50 shrink-0">({planet.ships})</span>
           </p>
         ),
-        value: star.id,
+        value: planet.id,
         icon: <Sparkle size={14} />,
       },
     ]);
@@ -126,9 +128,10 @@ function TransferShips({
 
   const entities = carriers
     .map(
-      (c) => ({ ...c, type: "carrier" } as (Carrier | Star) & { type: string })
+      (c) =>
+        ({ ...c, type: "carrier" } as (Carrier | Planet) & { type: string })
     )
-    .concat([{ ...star, type: "star" }]);
+    .concat([{ ...planet, type: "star" }]);
 
   const fromEntity = entities.find((e) => e.id === from);
   const toEntity = entities.find((e) => e.id === to);
@@ -212,43 +215,43 @@ function TransferShips({
   );
 }
 
-export function StarInspect({ starId }: { starId: ID }) {
-  const star = useStar(starId);
+export function PlanetInspect({ planetId }: { planetId: ID }) {
+  const planet = usePlanet(planetId);
   const player = usePlayer();
-  const occupier = useSpecificPlayer(star?.occupier || "");
-  const starCosts = useStarCosts(starId);
-  const carriers = useCarriersAround(star?.position);
+  const occupier = useSpecificPlayer(planet?.occupier || "");
+  const planetCosts = usePlanetCosts(planetId);
+  const carriers = useCarriersAround(planet?.position);
   const [buildCarrierLoading, setBuildCarrierLoading] = useState(false);
   const [buildWarpGateLoading, setBuildWarpGateLoading] = useState(false);
-  if (!star)
-    return <Inspector title="unknown" nothingMessage="No star found." />;
+  if (!planet)
+    return <Inspector title="unknown" nothingMessage="No planet found." />;
 
   return (
     <Inspector
-      title={star.name}
+      title={planet.name}
       subtitle={occupier?.name ?? "Unoccupied"}
-      nothingMessage="No star selected"
+      nothingMessage="No planet selected"
       draggable={false}
-      dividerText="Star Information"
+      dividerText="Planet Information"
     >
-      {exists(star.resources) && (
+      {exists(planet.resources) && (
         <>
           <div className="flex sm:flex-row flex-col sm:gap-0 gap-3">
-            <StarAspect
-              star={star}
-              starCosts={starCosts}
+            <PlanetAspect
+              planet={planet}
+              planetCosts={planetCosts}
               player={player}
               aspect="economy"
             />
-            <StarAspect
-              star={star}
-              starCosts={starCosts}
+            <PlanetAspect
+              planet={planet}
+              planetCosts={planetCosts}
               player={player}
               aspect="industry"
             />
-            <StarAspect
-              star={star}
-              starCosts={starCosts}
+            <PlanetAspect
+              planet={planet}
+              planetCosts={planetCosts}
               player={player}
               aspect="science"
             />
@@ -268,15 +271,15 @@ export function StarInspect({ starId }: { starId: ID }) {
       <Field
         label="Resources"
         sublabel={
-          exists(star.resources)
+          exists(planet.resources)
             ? "Higher resources make star upgrades cheaper"
             : undefined
         }
       >
-        {exists(star.resources) ? (
+        {exists(planet.resources) ? (
           <p>
-            {star.resources}
-            {player?.id === star.occupier && (
+            {planet.resources}
+            {player?.id === planet.occupier && (
               <>
                 <Tooltip
                   content={`Terraforming level ${
@@ -288,14 +291,14 @@ export function StarInspect({ starId }: { starId: ID }) {
                   }`}</span>
                 </Tooltip>
                 <span>{` = ${
-                  star.resources! +
+                  planet.resources! +
                   (player?.research_levels.terraforming ?? 1) * 5
                 }`}</span>
               </>
             )}
             {` `}
             <span className="opacity-50">{`(${(
-              (star.resources! / 50) *
+              (planet.resources! / 50) *
               100
             ).toFixed(0)}%)`}</span>
           </p>
@@ -303,31 +306,31 @@ export function StarInspect({ starId }: { starId: ID }) {
           "UNKNOWN"
         )}
       </Field>
-      {exists(star.ships) && <Field label="Ships">{star.ships}</Field>}
+      {exists(planet.ships) && <Field label="Ships">{planet.ships}</Field>}
       <Field label="Coordinates">
-        ({star.position.x.toFixed(4)} LY, {star.position.y.toFixed(4)} LY)
+        ({planet.position.x.toFixed(4)} LY, {planet.position.y.toFixed(4)} LY)
       </Field>
-      {exists(star.resources) && (
+      {exists(planet.resources) && (
         <>
           <hr className="border-white/30 my-5" />
           <Field
             label="Warp Gate"
             sublabel="Allows warp speed travel between stars"
           >
-            {player?.id === star.occupier &&
-              (!star.warp_gate ? (
+            {player?.id === planet.occupier &&
+              (!planet.warp_gate ? (
                 <Button
                   className="w-full justify-center mt-2 pr-0 py-0"
                   variant="vibrant"
                   onClick={() => {
                     console.log(`Upgrade warp gate`);
                   }}
-                  disabled={starCosts.warp_gate > (player?.cash ?? 0)}
+                  disabled={planetCosts.warp_gate > (player?.cash ?? 0)}
                   loading={buildWarpGateLoading}
                 >
                   <p className="px-2 py-[0.4rem] w-full text-left">Build </p>
                   <p className="px-3 py-[0.4rem] shrink-0 bg-white/10">
-                    ${starCosts.warp_gate.toFixed(0)}
+                    ${planetCosts.warp_gate.toFixed(0)}
                   </p>
                 </Button>
               ) : (
@@ -339,14 +342,14 @@ export function StarInspect({ starId }: { starId: ID }) {
             label="Ship Carrier"
             sublabel="Allows for ship transport between stars"
           >
-            {player?.id === star.occupier && (
+            {player?.id === planet.occupier && (
               <Button
                 className="w-full justify-center mt-2 pr-0 py-0"
                 variant="vibrant"
                 onClick={() => {
                   setBuildCarrierLoading(true);
 
-                  buildCarrier(star.id)
+                  buildCarrier(planet.id)
                     .then((newcarrier) => {
                       if (!newcarrier) return;
                       mapState.getState().addSelected({
@@ -357,7 +360,7 @@ export function StarInspect({ starId }: { starId: ID }) {
                     })
                     .finally(() => setBuildCarrierLoading(false));
                 }}
-                disabled={(player?.cash ?? 0) < 25 || (star.ships ?? 0) < 1}
+                disabled={(player?.cash ?? 0) < 25 || (planet.ships ?? 0) < 1}
                 loading={buildCarrierLoading}
               >
                 <p className="px-2 py-[0.4rem] w-full text-left">Build </p>
@@ -370,7 +373,7 @@ export function StarInspect({ starId }: { starId: ID }) {
       {occupier?.id === player?.id && carriers.length > 0 && (
         <>
           <hr className="border-white/30 my-5" />
-          <TransferShips star={star} carriers={carriers} key={star.id} />
+          <TransferShips planet={planet} carriers={carriers} key={planet.id} />
         </>
       )}
     </Inspector>

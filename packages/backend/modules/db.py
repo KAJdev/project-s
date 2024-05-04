@@ -1,10 +1,11 @@
 from datetime import datetime, UTC
 from enum import Enum
 import math
+import random
 from uuid import UUID, uuid4
 from dotenv import load_dotenv
 from os import getenv
-from modules.utils import print, generate_id
+from modules.utils import STAR_NAME_PARTS, print, generate_id
 
 load_dotenv()
 
@@ -59,8 +60,8 @@ class User(Document):
 
 class GameSettings(BaseModel):
     max_players: int = Field(default=8)
-    star_victory_percentage: int = Field(default=51)
-    stars_per_player: int = Field(default=24)
+    victory_percentage: int = Field(default=51)
+    stars_per_player: int = Field(default=4)
     production_cycle_length: int = Field(default=24)  # production cycle length in hours
     trading_level_cost: int = Field(default=15)  # cost to trade per level
     carrier_speed: float = Field(
@@ -68,8 +69,13 @@ class GameSettings(BaseModel):
     )  # carrier speed in light years per hour
     warp_speed: float = Field(default=3)  # warp speed multiplier
 
-    # starting star values
-    starting_stars: int = Field(default=6)
+    # starting values
+    starting_systems: int = Field(
+        default=1
+    )  # how many full systems to give to each player
+    starting_system_size: int = Field(
+        default=6
+    )  # how many planets in the starting system for each player
     starting_cash: int = Field(default=500)
     starting_ships: int = Field(default=10)  # starting ships per star
     starting_economy: int = Field(default=5)  # starting economy for player's home star
@@ -191,11 +197,11 @@ class Player(Document):
             del d[k]
         return convert_dates_to_iso(d)
 
-    def do_research(self, game: Game, stars: list["Star"]):
+    def do_research(self, game: Game, planets: list["Planet"]):
         if not self.research_queue:
             self.research_queue = [Technology.hyperspace]
 
-        science = sum(s.science for s in stars if s.occupier == self.id)
+        science = sum(p.science for p in planets if p.occupier == self.id)
         current_tech = self.research_queue[0]
         setattr(
             self.research_points,
@@ -217,18 +223,18 @@ class Player(Document):
             if len(self.research_queue) > 1:
                 self.research_queue.pop(0)
 
-    def do_economy(self, stars: list["Star"]):
-        for star in stars:
-            if star.occupier == self.id:
+    def do_economy(self, planets: list["Planet"]):
+        for planet in planets:
+            if planet.occupier == self.id:
                 self.cash += (
-                    star.economy / 0.25 / 60
+                    planet.economy / 0.25 / 60
                 )  # because we are running this every minute
 
-    def do_production(self, stars: list["Star"]):
-        for star in stars:
-            if star.occupier == self.id:
+    def do_production(self, planets: list["Planet"]):
+        for planet in planets:
+            if planet.occupier == self.id:
                 self.cash += (
-                    star.economy * 10
+                    planet.economy * 10
                 )  # because this runs every production cycle
 
     class Settings:
@@ -260,12 +266,51 @@ class Star(Document):
     name: str
     planets: list[Link["Planet"]] = Field(default_factory=list)
 
+    def dict(self):
+        d = super().model_dump(exclude={"planets"})
+        return convert_dates_to_iso(d)
+
+    def gen_system(self):
+        for i in range(random.randint(1, 8)):
+            planet = Planet(
+                game=self.game,
+                orbits=self.id,
+                distance=(i + 1) + (random.random() * 0.5),
+                name=Planet.generate_planet_name(self.name, i),
+                occupier=None,
+                resources=random.randint(1, 50),
+            )
+
+            planet.position = planet.get_position([self])
+
+            self.planets.append(planet)
+
+    def gen_player_system(self, game: Game, player: Player):
+        for i in range(game.settings.starting_system_size):
+            planet = Planet(
+                game=self.game,
+                orbits=self.id,
+                distance=(i + 1) + (random.random() * 0.5),
+                name=Planet.generate_planet_name(self.name, i),
+                occupier=player.id,
+                resources=40,
+                economy=game.settings.starting_economy,
+                industry=game.settings.starting_industry,
+                science=game.settings.starting_science,
+            )
+
+            planet.position = planet.get_position([self])
+
+            self.planets.append(planet)
+
 
 class Planet(Document):
     id: str = Field(default_factory=generate_id)
     game: str
     orbits: str
-    distance: int
+    distance: float
+    theta: float = Field(default_factory=lambda: random.random() * math.pi * 2)
+    position: Position = Field(default_factory=lambda: Position(x=0, y=0))
     name: str
     occupier: Optional[str] = Field(default=None)
     ships: int = Field(default=0)
@@ -304,9 +349,28 @@ class Planet(Document):
             "warp_gate": self.get_warp_gate_cost(terraforming_level),
         }
 
+    def get_position(self, stars: list[Star]):
+        star = next((s for s in stars if s.id == self.orbits), None)
+        if not star:
+            return None
+        return Position(
+            x=star.position.x + self.distance * math.cos(self.theta),
+            y=star.position.y + self.distance * math.sin(self.theta),
+        )
+
     def dict(self):
         d = super().model_dump()
         return convert_dates_to_iso(d)
+
+    @staticmethod
+    def generate_planet_name(star_name: str, i: int):
+        name_type = random.choice(["indexed", "proper"])
+
+        if name_type == "indexed":
+            return f"{star_name} {chr(i + 98)}"
+
+        if name_type == "proper":
+            return f"{random.choice(STAR_NAME_PARTS['prefix'])}{''.join(random.choices(STAR_NAME_PARTS['middle'], k=2))}{random.choice(STAR_NAME_PARTS['suffix'])}"
 
     def dict_unscanned(self):
         d = super().model_dump()
@@ -342,7 +406,7 @@ class Planet(Document):
         self.ships += int(self.ship_accum)
         self.ship_accum -= int(self.ship_accum)
 
-    def do_orbit(self, game: Game, stars: list[Star], carriers: list["Carrier"]):
+    async def do_orbit(self, game: Game, stars: list[Star], carriers: list["Carrier"]):
         """
         orbit around star
         """
@@ -354,20 +418,11 @@ class Planet(Document):
 
         # rotate around star by speed, make sure actual distance moved is based on speed, dont just rotate by speed
         r = distance(self.position, star.position)
-        theta = orbit_speed / r
+        new_theta = self.theta + orbit_speed / r
 
         new_position = Position(
-            x=star.position.x
-            + (self.position.x - star.position.x) * math.cos(theta)
-            - (self.position.y - star.position.y) * math.sin(theta),
-            y=star.position.y
-            + (self.position.x - star.position.x) * math.sin(theta)
-            + (self.position.y - star.position.y) * math.cos(theta),
-        )
-
-        # get the delta between the new position and the old position
-        delta = Position(
-            x=new_position.x - self.position.x, y=new_position.y - self.position.y
+            x=star.position.x + r * math.cos(new_theta),
+            y=star.position.y + r * math.sin(new_theta),
         )
 
         # find all the carriers currently on the planet
@@ -376,10 +431,16 @@ class Planet(Document):
         ]
 
         # move the carriers
+        save_tasks = []
         for carrier in carriers_on_planet:
-            carrier.position.x += delta.x
-            carrier.position.y += delta.y
+            carrier.position.x = new_position.x
+            carrier.position.y = new_position.y
+            save_tasks.append(carrier.save_changes())
 
+        if save_tasks:
+            await asyncio.gather(*save_tasks)
+
+        self.theta = new_theta
         self.position = new_position
 
     class Settings:
@@ -388,7 +449,7 @@ class Planet(Document):
 
 
 class Destination(BaseModel):
-    star: str
+    planet: str
     action: Optional[str] = Field(default="collect")  # collect, drop, None
 
 
@@ -411,13 +472,13 @@ class Carrier(Document):
             d["destination_queue"] = [d["destination_queue"][0]]
         return d
 
-    async def move(self, game: Game, stars: list[Star]):
+    async def move(self, game: Game, planets: list[Planet]):
         if not self.destination_queue:
             return
 
         try:
             destination = next(
-                s for s in stars if s.id == self.destination_queue[0].star
+                p for p in planets if p.id == self.destination_queue[0].planet
             )
         except StopIteration:
             # destination no longer exists
@@ -441,13 +502,13 @@ class Carrier(Document):
 
             if popped.action == "collect" and destination.occupier == self.owner:
                 self.ships += destination.ships
-                await destination.set({Star.ships: 0})
+                await destination.set({Planet.ships: 0})
             elif (
                 popped.action == "drop"
                 and self.ships > 1
                 and destination.occupier == self.owner
             ):
-                await destination.inc({Star.ships: self.ships - 1})
+                await destination.inc({Planet.ships: self.ships - 1})
                 self.ships = 1
 
         else:
@@ -465,8 +526,8 @@ class Carrier(Document):
 
 
 class CombatEvent(BaseModel):
-    star_id: str
-    star_name: str
+    planet_id: str
+    planet_name: str
     attacking_players: list[Link[Player]]
     defending_players: list[Link[Player]]
     attacker_ships: int
@@ -513,7 +574,7 @@ class CombatEvent(BaseModel):
         return "\n".join(
             [
                 "type: combat",
-                f"star: {self.star_name}",
+                f"planet: {self.planet_name}",
                 f"attacker{'s' if len(self.attacking_players) > 1 else ''}: {attacking} (with {self.attacker_ships} ships)",
                 f"defender{'s' if len(self.defending_players) > 1 else ''}: {defending} (with {self.defender_ships} ships)",
                 f"winner: {winner}",
@@ -584,7 +645,7 @@ class News(Document):
 
 class PlayerCensus(BaseModel):
     player: str
-    stars: int
+    planets: int
     carriers: int
     cash: int
     ships: int
@@ -627,6 +688,7 @@ async def init():
             Carrier,
             Event,
             News,
+            Planet,
             Census,
         ],
     )

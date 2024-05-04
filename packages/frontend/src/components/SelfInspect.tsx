@@ -11,9 +11,9 @@ export function SelfInspect() {
     return null;
   }
 
-  const ownedStars = scan?.stars.filter((s) => s.occupier === self.id);
+  const ownedPlanets = scan?.planets?.filter((p) => p.occupier === self.id);
   const totalEconomy =
-    ownedStars?.reduce((acc, s) => acc + (s.economy ?? 0), 0) ?? 0;
+    ownedPlanets?.reduce((acc, p) => acc + (p.economy ?? 0), 0) ?? 0;
   const cashPerHour =
     totalEconomy / game?.settings.production_cycle_length! / 0.25;
 

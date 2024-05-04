@@ -2,19 +2,19 @@ import { getHyperSpaceDistance } from "@/lib/players";
 import { Scan, scanStore, usePlayer, useScan } from "@/lib/scan";
 import { Circle } from "react-konva";
 
-export function HyperspaceCircle({ starId }: { starId: ID }) {
+export function HyperspaceCircle({ planetId }: { planetId: ID }) {
   const player = usePlayer();
   const scan = useScan();
-  const star = scan?.stars.find((s) => s.id === starId);
+  const planet = scan?.planets.find((p) => p.id === planetId);
 
-  if (!star || player?.id !== star?.occupier) {
+  if (!planet || player?.id !== planet?.occupier) {
     return null;
   }
 
   return (
     <Circle
-      x={star.position.x}
-      y={star.position.y}
+      x={planet.position.x}
+      y={planet.position.y}
       radius={getHyperSpaceDistance(player)}
       opacity={1}
       // fill={darken(player.color, -170)}

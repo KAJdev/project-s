@@ -240,8 +240,10 @@ async def control_carrier(request: Request, game_id: str, carrier_id: str):
     return json(carrier.dict())
 
 
-async def carrier_tick(game: Game, stars: list[Star], hourly=False):
-    carriers = await Carrier.find(Carrier.game == game.id).to_list(None)
+async def carrier_tick(
+    game: Game, stars: list[Star], carriers: list[Carrier], hourly=False
+):
+    planets = [p for s in stars for p in s.planets]
 
     tasks = []
     for carrier in carriers:
@@ -251,7 +253,7 @@ async def carrier_tick(game: Game, stars: list[Star], hourly=False):
     await asyncio.gather(*tasks)
 
     # fight me bitch
-    for planet in (star.planets for star in stars):
+    for planet in planets:
         # get all the carriers within fighting distance (say 0.01 LY)
         close_carriers = [
             c for c in carriers if distance(c.position, planet.position) < 0.01
@@ -404,4 +406,4 @@ async def carrier_tick(game: Game, stars: list[Star], hourly=False):
         # TODO: fix this dumb way of doing this
         evnt.data.attacking_players = attacking_members
         evnt.data.defending_players = [defending_member] if defending_member else []
-        await newsgen.create_article(game, evnt, stars)
+        await newsgen.create_article(game, evnt, planets)

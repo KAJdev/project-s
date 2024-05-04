@@ -1,19 +1,19 @@
 import asyncio
-from modules.db import Game, Player, Star
+from modules.db import Carrier, Game, Planet, Player, Star
 import asyncio
 from sanic import Blueprint, Request, json, exceptions
 from sanic_ext import openapi
 from modules.auth import authorized
 from beanie.operators import Or, And, In
 
-bp = Blueprint("stars")
+bp = Blueprint("planets")
 
 
-@bp.route("/v1/games/<game_id>/stars/<star_id>/upgrade", methods=["PATCH"])
+@bp.route("/v1/games/<game_id>/planets/<planet_id>/upgrade", methods=["PATCH"])
 @authorized()
-@openapi.operation("Upgrade a star")
-@openapi.description("Upgrade a star")
-async def upgrade_star(request: Request, game_id: str, star_id: str):
+@openapi.operation("Upgrade a planet")
+@openapi.description("Upgrade a planet")
+async def upgrade_star(request: Request, game_id: str, planet_id: str):
     player = await Player.find_one(
         Player.game == game_id, Player.user == request.ctx.user.id
     )
@@ -36,27 +36,33 @@ async def upgrade_star(request: Request, game_id: str, star_id: str):
     if aspect not in ["economy", "industry", "science"]:
         raise exceptions.BadRequest("Bad Request")
 
-    star = await Star.find_one(And(Star.game == game.id, Star.id == star_id))
-    if not star:
+    planet = await Planet.find_one(And(Planet.game == game.id, Planet.id == planet_id))
+    if not planet:
         raise exceptions.NotFound("Star not found")
 
-    costs = star.get_all_costs(player.research_levels.terraforming)
+    costs = planet.get_all_costs(player.research_levels.terraforming)
     print(costs)
     if costs[aspect] > player.cash:
         raise exceptions.BadRequest("Not enough resources")
 
     player.cash -= costs[aspect]
-    setattr(star, aspect, getattr(star, aspect) + 1)
+    setattr(planet, aspect, getattr(planet, aspect) + 1)
 
-    await asyncio.gather(player.save_changes(), star.save_changes())
+    await asyncio.gather(
+        player.inc({Player.cash: -costs[aspect]}), planet.inc({aspect: 1})
+    )
 
-    return json(star.dict())
+    return json(planet.dict())
 
 
-async def star_tick(game: Game, stars: list[Star], hourly=False):
+async def planet_tick(
+    game: Game, stars: list[Star], carriers: list[Carrier], hourly=False
+):
     tasks = []
     for star in stars:
-        star.do_production(game)
-        tasks.append(star.save_changes())
+        for planet in star.planets:
+            planet.do_production(game)
+            await planet.do_orbit(game, stars, carriers)
+            tasks.append(planet.save_changes())
 
     await asyncio.gather(*tasks)

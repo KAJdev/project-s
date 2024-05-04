@@ -1,9 +1,11 @@
 /* eslint-disable @next/next/no-img-element */
 import {
   Carrier,
+  Planet,
   Star,
   editDestinationAction,
   removeCarrierDestination,
+  usePlanets,
   usePlayers,
   useSpecificPlayer,
   useStars,
@@ -14,19 +16,19 @@ import { Tooltip } from "./Theme/Tooltip";
 import { mapState } from "@/lib/map";
 import { Button } from "./Theme/Button";
 import { Select } from "./Theme/Select";
-import { useStarImagePath } from "./Map/Star";
+import { useStarImagePath } from "./Map/Planet";
 
-function GraphStar({
-  star,
+function GraphPlanet({
+  planet,
   carrier,
   index,
 }: {
-  star: Star;
+  planet: Planet;
   carrier: Carrier;
   index: number;
 }) {
-  const player = useSpecificPlayer(star.occupier);
-  const imageUrl = useStarImagePath(star.id);
+  const player = useSpecificPlayer(planet.occupier);
+  const imageUrl = useStarImagePath(planet.id);
   return (
     <div className="flex justify-between gap-2 items-center w-full">
       <div className="flex items-center gap-2">
@@ -36,7 +38,7 @@ function GraphStar({
           src={imageUrl}
           alt={"star icon"}
         />
-        <p>{star.name}</p>
+        <p>{planet.name}</p>
       </div>
       <div className="flex gap-2 items-center">
         {index === carrier.destination_queue.length - 1 && index > 0 && (
@@ -66,7 +68,7 @@ function GraphStar({
 }
 
 export function DestinationGraph({ carrier }: { carrier: Carrier }) {
-  const stars = useStars(carrier.destination_queue.map((d) => d.star));
+  const planets = usePlanets(carrier.destination_queue.map((d) => d.planet));
   const [flightPlanningFor, setFlightPlanningFor] = mapState((s) => [
     s.flightPlanningFor,
     s.setFlightPlanningFor,
@@ -88,15 +90,15 @@ export function DestinationGraph({ carrier }: { carrier: Carrier }) {
             flightPlanningFor === carrier.id && "opacity-10"
           )}
         >
-          {stars.map((star, i) => (
+          {planets.map((planet, i) => (
             <>
-              <GraphStar
-                key={star.id}
-                star={star}
+              <GraphPlanet
+                key={planet.id}
+                planet={planet}
                 carrier={carrier}
                 index={i}
               />
-              {i < stars.length - 1 && (
+              {i < planets.length - 1 && (
                 <div className="w-8 mr-auto flex justify-center" key={i}>
                   <div className="w-0 h-3 border border-white/20 border-dotted" />
                 </div>

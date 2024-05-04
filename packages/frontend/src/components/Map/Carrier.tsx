@@ -14,79 +14,6 @@ function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
 }
 
-function positionLerp(
-  a: { x: number; y: number },
-  b: { x: number; y: number },
-  t: number
-) {
-  return {
-    x: lerp(a.x, b.x, t),
-    y: lerp(a.y, b.y, t),
-  };
-}
-
-function degToRad(angle: number) {
-  return (angle / 180) * Math.PI;
-}
-
-function getCenter(shape: {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rotation?: number;
-}) {
-  const angleRad = degToRad(shape.rotation || 0);
-  return {
-    x:
-      shape.x +
-      (shape.width / 2) * Math.cos(angleRad) +
-      (shape.height / 2) * Math.sin(-angleRad),
-    y:
-      shape.y +
-      (shape.height / 2) * Math.cos(angleRad) +
-      (shape.width / 2) * Math.sin(angleRad),
-  };
-}
-
-function rotateAroundPoint(
-  shape: { x: number; y: number; rotation: number },
-  deltaDeg: number,
-  point: { x: number; y: number }
-) {
-  const angleRad = degToRad(deltaDeg);
-  const x = Math.round(
-    point.x +
-      (shape.x - point.x) * Math.cos(angleRad) -
-      (shape.y - point.y) * Math.sin(angleRad)
-  );
-  const y = Math.round(
-    point.y +
-      (shape.x - point.x) * Math.sin(angleRad) +
-      (shape.y - point.y) * Math.cos(angleRad)
-  );
-  return {
-    ...shape,
-    rotation: Math.round(shape.rotation + deltaDeg),
-    x,
-    y,
-  };
-}
-
-function rotateAroundCenter(
-  shape: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    rotation: number;
-  },
-  deltaDeg: number
-) {
-  const center = getCenter(shape);
-  return rotateAroundPoint(shape, deltaDeg, center);
-}
-
 function CarrierName({
   from,
   to,
@@ -122,47 +49,6 @@ function CarrierName({
   );
 }
 
-function RotatingArcs({
-  x,
-  y,
-  starSize,
-  zoom,
-  speed,
-}: {
-  x: number;
-  y: number;
-  starSize: number;
-  zoom: number;
-  speed: number;
-}) {
-  const [r, setR] = useState<number>(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setR((r: number) => r + speed);
-    }, 10);
-
-    return () => clearInterval(interval);
-  }, [speed]);
-
-  const arcs = Array.from({ length: 4 }, (_, i) => (
-    <Arc
-      key={i}
-      x={x}
-      y={y}
-      innerRadius={starSize / 1.55}
-      outerRadius={starSize / 1.4}
-      angle={30}
-      rotation={i * 90 + 30 + r}
-      fill="white"
-      opacity={0.5}
-      listening={false}
-    />
-  ));
-
-  return arcs;
-}
-
 export function MapCarrier({
   carrierId,
   selectedEntities,
@@ -177,9 +63,9 @@ export function MapCarrier({
   const game = useGame(scan?.game);
   const carrier = scan?.carriers.find((c) => c.id === carrierId);
   const owner = scan?.players.find((p) => p.id === carrier?.owner);
-  const starsAround =
-    scan?.stars.filter(
-      (s) => carrier && distance(s.position, carrier?.position) < 0.2
+  const planetsAround =
+    scan?.planets.filter(
+      (p) => carrier && distance(p.position, carrier?.position) < 0.2
     ) ?? [];
   const [hovered, setHovered] = useState(false);
   const isSelected = selectedEntities.some(
@@ -201,8 +87,8 @@ export function MapCarrier({
   const carrierSize = Math.max(Math.min(1, lerp(30, 80, 0 / 50) / zoom), 0.1);
   const color = owner?.color || null;
 
-  const currentDestination = scan?.stars.find(
-    (s) => s.id === carrier?.destination_queue[0]?.star
+  const currentDestination = scan?.planets.find(
+    (p) => p.id === carrier?.destination_queue[0]?.planet
   );
 
   useEffect(() => {
@@ -307,7 +193,7 @@ export function MapCarrier({
 
       {(hovered || isSelected || zoom > 50) &&
         carrier.destination_queue.length > 0 &&
-        starsAround.length === 0 && (
+        planetsAround.length === 0 && (
           <Html
             groupProps={{
               x: localPosition.x,
