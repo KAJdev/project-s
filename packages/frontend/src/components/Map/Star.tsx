@@ -101,25 +101,29 @@ function OrbitLine({
   radius: number;
   zoom: number;
 }) {
-  const [offset, setOffset] = useState(0);
+  const ref = useRef<any>(null);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setOffset((offset: number) => (offset - 0.0008) % 1);
-    }, 10);
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     if (!ref.current) {
+  //       return;
+  //     }
+  //     const currentOffset = ref.current.dashOffset();
+  //     ref.current.dashOffset((currentOffset - 0.0008) % 1);
+  //   }, 10);
 
-    return () => clearInterval(interval);
-  }, []);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   return (
     <Circle
+      ref={ref}
       x={position.x}
       y={position.y}
       radius={radius}
       stroke={"white"}
       strokeWidth={1 / zoom}
-      dash={[10 / zoom, 5 / zoom]}
-      dashOffset={offset}
+      // dash={[10 / zoom, 5 / zoom]}
       listening={false}
       opacity={0.1}
     />
@@ -165,6 +169,21 @@ export function MapStar({
             zoom={zoom}
           />
         ))}
+
+        {/* light bc why not */}
+        <Circle
+          x={star.position.x}
+          y={star.position.y}
+          radius={5}
+          //  radial gradient fill
+          fillRadialGradientStartPoint={{ x: 0, y: 0 }}
+          fillRadialGradientStartRadius={0}
+          fillRadialGradientEndPoint={{ x: 0, y: 0 }}
+          fillRadialGradientEndRadius={5}
+          fillRadialGradientColorStops={[0, "white", 1, "rgba(255,255,255,0)"]}
+          opacity={0.1}
+          listening={false}
+        />
 
         <Image
           image={img}

@@ -240,9 +240,9 @@ export async function addToCarrierDestination(planetId: ID) {
   const lastDestination =
     carrier.destination_queue[carrier.destination_queue.length - 1];
   const lastPosition =
-    scan.stars.find((s) => s.id === lastDestination?.planet)?.position ??
+    scan.planets.find((s) => s.id === lastDestination?.planet)?.position ??
     carrier.position;
-  const newDestination = scan.stars.find((s) => s.id === planetId)?.position!;
+  const newDestination = scan.planets.find((s) => s.id === planetId)?.position!;
   const owner = scan.players.find((p) => p.id === carrier.owner);
   if (!owner) return;
 

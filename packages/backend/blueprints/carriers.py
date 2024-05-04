@@ -247,7 +247,7 @@ async def carrier_tick(
 
     tasks = []
     for carrier in carriers:
-        await carrier.move(game, stars)
+        await carrier.move(game, planets)
         tasks.append(carrier.save_changes())
 
     await asyncio.gather(*tasks)

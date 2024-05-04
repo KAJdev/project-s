@@ -47,19 +47,19 @@ function Entities() {
           {scan?.carriers.map((carrier) => (
             <CarrierLines key={carrier.id} carrierId={carrier.id} />
           ))}
-          {scan?.planets.map((planet) => (
-            <MapPlanet
-              key={planet.id}
-              planetId={planet.id}
+          {scan?.stars.map((star) => (
+            <MapStar
+              key={star.id}
+              starId={star.id}
               zoom={zoom}
               flightPlanningFor={map.flightPlanningFor}
               selectedEntities={map.selected}
             />
           ))}
-          {scan?.stars.map((star) => (
-            <MapStar
-              key={star.id}
-              starId={star.id}
+          {scan?.planets.map((planet) => (
+            <MapPlanet
+              key={planet.id}
+              planetId={planet.id}
               zoom={zoom}
               flightPlanningFor={map.flightPlanningFor}
               selectedEntities={map.selected}

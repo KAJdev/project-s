@@ -297,6 +297,7 @@ class Star(Document):
                 economy=game.settings.starting_economy,
                 industry=game.settings.starting_industry,
                 science=game.settings.starting_science,
+                ships=game.settings.starting_ships,
             )
 
             planet.position = planet.get_position([self])
@@ -427,7 +428,10 @@ class Planet(Document):
 
         # find all the carriers currently on the planet
         carriers_on_planet = [
-            c for c in carriers if distance(c.position, self.position) < 0.01
+            c
+            for c in carriers
+            if distance(c.position, self.position) < 0.01
+            and len(c.destination_queue) == 0
         ]
 
         # move the carriers

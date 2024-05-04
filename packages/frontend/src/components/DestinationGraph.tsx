@@ -16,7 +16,6 @@ import { Tooltip } from "./Theme/Tooltip";
 import { mapState } from "@/lib/map";
 import { Button } from "./Theme/Button";
 import { Select } from "./Theme/Select";
-import { useStarImagePath } from "./Map/Planet";
 
 function GraphPlanet({
   planet,
@@ -28,15 +27,12 @@ function GraphPlanet({
   index: number;
 }) {
   const player = useSpecificPlayer(planet.occupier);
-  const imageUrl = useStarImagePath(planet.id);
   return (
     <div className="flex justify-between gap-2 items-center w-full">
       <div className="flex items-center gap-2">
-        <img
-          className="w-8 h-8 rounded-full border-[3px]"
-          style={{ borderColor: player?.color ?? "#888888" }}
-          src={imageUrl}
-          alt={"star icon"}
+        <div
+          className="w-8 h-8 rounded-full"
+          style={{ backgroundColor: player?.color ?? "#888888" }}
         />
         <p>{planet.name}</p>
       </div>
