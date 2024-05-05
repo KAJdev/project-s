@@ -10,10 +10,7 @@ from modules.utils import (
 )
 
 
-GALAXY_SIZE_PER_STAR = 2
-STARS_PER_PLAYER = 5
-MAX_SYSTEM_SIZE = 10
-MIN_SYSTEM_SIZE = 3
+GALAXY_SIZE_PER_STAR = 2.5
 MAX_ITERATIONS = 100000
 
 
@@ -47,10 +44,10 @@ def generate_star_positions(
     player_count: int, stars_per_player: int, starting_system_size: int = 6
 ) -> tuple[list[tuple[Position, int]], list[Position]]:
     player_stars: list[Position] = []
-    stars: list[tuple[Position, int]] = []
+    star_positions: list[Position] = []
     iteration = 0
 
-    galaxy_size = GALAXY_SIZE_PER_STAR * player_count * STARS_PER_PLAYER
+    galaxy_size = GALAXY_SIZE_PER_STAR * player_count * stars_per_player
 
     # make some stars for the players exactly on the edge of the galaxy so they're evenly spaced
     for i in range(player_count):
@@ -59,36 +56,48 @@ def generate_star_positions(
         player_stars.append(Position(x=x, y=y))
 
     while (
-        len(stars) < player_count * (STARS_PER_PLAYER - 1)
+        len(star_positions) < player_count * (stars_per_player - 1)
         and iteration < MAX_ITERATIONS
     ):
         iteration += 1
 
-        # chose a star and create a new star off of that
-        all_stars = [*[(s, starting_system_size) for s in player_stars], *stars]
-        star_pos, star_size = random.choice(all_stars)
-
-        new_system_size = random.randint(MIN_SYSTEM_SIZE, MAX_SYSTEM_SIZE)
-
+        r = math.sqrt(random.random()) * galaxy_size / 2
         theta = random.random() * 2 * 3.14159
 
-        # point a bit towards the center
-        theta += math.atan2(-star_pos.y, -star_pos.x) * 0.5
+        x, y = r * math.cos(theta), r * math.sin(theta)
 
-        d = new_system_size + star_size
-
-        x, y = star_pos.x + d * math.cos(theta), star_pos.y + d * math.sin(theta)
-
-        # check if the new star is too close to any other star
+        # make sure its >starting_size+1 units away from a player star
         if any(
-            distance(Position(x=x, y=y), star[0]) < new_system_size + star[1]
-            for star in all_stars
+            distance(Position(x=x, y=y), star) < starting_system_size + 1
+            for star in player_stars
         ):
             continue
 
-        stars.append((Position(x=x, y=y), new_system_size))
+        star_positions.append(Position(x=x, y=y))
 
     if iteration >= MAX_ITERATIONS:
         raise Exception("Failed to generate star positions. You're kinda boned ngl.")
+
+    # go through and create system sized
+    stars: list[tuple[Position, int]] = []
+
+    all_stars = player_stars + star_positions
+
+    # find mutual closest stars and set system size to be the distance between them/2
+    # keep in mind that for i < len(player_stars), must be a player star and size must be starting_system_size
+
+    def close_lambda(i, j):
+        d = distance(star_positions[i], all_stars[j])
+        if d < 0.001:
+            return 99999999
+        return d
+
+    for i in range(len(star_positions)):
+        closest_index = min(
+            range(len(all_stars)),
+            key=lambda j: close_lambda(i, j),
+        )
+
+        stars.append((star_positions[i], int(close_lambda(i, closest_index) / 2)))
 
     return stars, player_stars
