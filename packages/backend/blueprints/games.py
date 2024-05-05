@@ -32,6 +32,7 @@ async def generate_map(game: Game):
     normal_stars, player_stars = generate_star_positions(
         player_count=game.settings.max_players,
         stars_per_player=game.settings.stars_per_player,
+        starting_system_size=game.settings.starting_system_size,
     )
 
     stars: list[Star] = []
@@ -46,13 +47,13 @@ async def generate_map(game: Game):
         stars.append(star)
 
     # now add the rest of the normal stars
-    for star in normal_stars:
+    for star, size in normal_stars:
         star = Star(
             position=star,
             name=generate_star_name(),
             game=game.id,
         )
-        star.gen_system()
+        star.gen_system(size)
         stars.append(star)
 
     for star in stars:

@@ -10,9 +10,11 @@ from modules.utils import (
 )
 
 
-MIN_STAR_DISTANCE = 8
-GALAXY_SIZE = 50
-MAX_ITERATIONS = 10000
+GALAXY_SIZE_PER_STAR = 2
+STARS_PER_PLAYER = 5
+MAX_SYSTEM_SIZE = 10
+MIN_SYSTEM_SIZE = 3
+MAX_ITERATIONS = 100000
 
 
 def generate_star_name() -> str:
@@ -42,34 +44,49 @@ def generate_carrier_name(seed: int) -> str:
 
 
 def generate_star_positions(
-    player_count: int, stars_per_player: int
-) -> tuple[list[Position], list[Position]]:
+    player_count: int, stars_per_player: int, starting_system_size: int = 6
+) -> tuple[list[tuple[Position, int]], list[Position]]:
     player_stars: list[Position] = []
-    stars: list[Position] = []
+    stars: list[tuple[Position, int]] = []
     iteration = 0
+
+    galaxy_size = GALAXY_SIZE_PER_STAR * player_count * STARS_PER_PLAYER
 
     # make some stars for the players exactly on the edge of the galaxy so they're evenly spaced
     for i in range(player_count):
         theta = i * (2 * 3.14159) / player_count
-        x, y = GALAXY_SIZE / 2 * math.cos(theta), GALAXY_SIZE / 2 * math.sin(theta)
+        x, y = galaxy_size / 2 * math.cos(theta), galaxy_size / 2 * math.sin(theta)
         player_stars.append(Position(x=x, y=y))
 
     while (
-        len(stars) < player_count * (stars_per_player - 1)
+        len(stars) < player_count * (STARS_PER_PLAYER - 1)
         and iteration < MAX_ITERATIONS
     ):
         iteration += 1
 
-        r = math.sqrt(random.random()) * GALAXY_SIZE / 2
+        # chose a star and create a new star off of that
+        all_stars = [*[(s, starting_system_size) for s in player_stars], *stars]
+        star_pos, star_size = random.choice(all_stars)
+
+        new_system_size = random.randint(MIN_SYSTEM_SIZE, MAX_SYSTEM_SIZE)
+
         theta = random.random() * 2 * 3.14159
 
-        x, y = r * math.cos(theta), r * math.sin(theta)
+        # point a bit towards the center
+        theta += math.atan2(-star_pos.y, -star_pos.x) * 0.5
 
-        if not any(
-            distance((x, y), (star.x, star.y)) < MIN_STAR_DISTANCE
-            for star in [*stars, *player_stars]
+        d = new_system_size + star_size
+
+        x, y = star_pos.x + d * math.cos(theta), star_pos.y + d * math.sin(theta)
+
+        # check if the new star is too close to any other star
+        if any(
+            distance(Position(x=x, y=y), star[0]) < new_system_size + star[1]
+            for star in all_stars
         ):
-            stars.append(Position(x=x, y=y))
+            continue
+
+        stars.append((Position(x=x, y=y), new_system_size))
 
     if iteration >= MAX_ITERATIONS:
         raise Exception("Failed to generate star positions. You're kinda boned ngl.")

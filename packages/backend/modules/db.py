@@ -107,6 +107,33 @@ class Position(BaseModel):
     x: float
     y: float
 
+    def __str__(self):
+        return f"({self.x}, {self.y})"
+
+    def __repr__(self):
+        return f"({self.x}, {self.y})"
+
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
+
+    def __ne__(self, other):
+        return self.x != other.x or self.y != other.y
+
+    def __add__(self, other):
+        return Position(x=self.x + other.x, y=self.y + other.y)
+
+    def __sub__(self, other):
+        return Position(x=self.x - other.x, y=self.y - other.y)
+
+    def __mul__(self, other):
+        return Position(x=self.x * other, y=self.y * other)
+
+    def __truediv__(self, other):
+        return Position(x=self.x / other, y=self.y / other)
+
+    def __floordiv__(self, other):
+        return Position(x=self.x // other, y=self.y // other)
+
 
 class Game(Document):
     id: str = Field(default_factory=generate_id)
@@ -270,8 +297,8 @@ class Star(Document):
         d = super().model_dump(exclude={"planets"})
         return convert_dates_to_iso(d)
 
-    def gen_system(self):
-        for i in range(random.randint(1, 8)):
+    def gen_system(self, size: int = 4):
+        for i in range(size):
             planet = Planet(
                 game=self.game,
                 orbits=self.id,
