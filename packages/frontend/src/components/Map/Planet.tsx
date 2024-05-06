@@ -12,6 +12,7 @@ import { Arc, Circle, Image } from "react-konva";
 import { DollarSign, Factory, Microscope, Rocket } from "lucide-react";
 import { Tooltip } from "../Theme/Tooltip";
 import { KonvaEventObject } from "konva/lib/Node";
+import { usePlanetImage } from "@/lib/planets";
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
@@ -159,6 +160,7 @@ export function MapPlanet({
   const [hovered, setHovered] = useState(false);
   const carriers = useCarriersAround(planet?.position, 0.1);
   const flightPlanInfo = useFlightPlanningInfo(planetId);
+  const img = usePlanetImage(planetId);
 
   const onPressed = useCallback(
     (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
@@ -193,18 +195,33 @@ export function MapPlanet({
     return (
       <>
         <>
-          <Circle
-            x={planet.position.x}
-            y={planet.position.y}
-            radius={starSize / 2}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-            fill={owner?.color || "gray"}
-            opacity={flightPlanInfo.outsideRange ? 0.2 : 1}
-            listening={!flightPlanInfo.outsideRange}
-            onMouseUp={onPressed}
-            onTouchEnd={onPressed}
-          />
+          {img && zoom > 20 ? (
+            <Image
+              x={planet.position.x - starSize / 2}
+              y={planet.position.y - starSize / 2}
+              image={img}
+              width={starSize}
+              height={starSize}
+              onMouseEnter={() => setHovered(true)}
+              onMouseLeave={() => setHovered(false)}
+              listening={!flightPlanInfo.outsideRange}
+              onMouseUp={onPressed}
+              onTouchEnd={onPressed}
+            />
+          ) : (
+            <Circle
+              x={planet.position.x}
+              y={planet.position.y}
+              radius={starSize / 2}
+              onMouseEnter={() => setHovered(true)}
+              onMouseLeave={() => setHovered(false)}
+              fill={owner?.color || "gray"}
+              opacity={flightPlanInfo.outsideRange ? 0.2 : 1}
+              listening={!flightPlanInfo.outsideRange}
+              onMouseUp={onPressed}
+              onTouchEnd={onPressed}
+            />
+          )}
           {/* {color && zoom > 40 && (
             <>
               <Arc

@@ -302,7 +302,7 @@ class Star(Document):
             planet = Planet(
                 game=self.game,
                 orbits=self.id,
-                distance=(i + 1) + (random.random() * 0.5),
+                distance=(i + 1) + ((random.random() * 0.75) - 0.375),
                 name=Planet.generate_planet_name(self.name, i),
                 occupier=None,
                 resources=random.randint(1, 50),
@@ -317,7 +317,7 @@ class Star(Document):
             planet = Planet(
                 game=self.game,
                 orbits=self.id,
-                distance=(i + 1) + (random.random() * 0.5),
+                distance=(i + 1) + ((random.random() * 0.75) - 0.375),
                 name=Planet.generate_planet_name(self.name, i),
                 occupier=player.id,
                 resources=40,

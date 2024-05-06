@@ -374,9 +374,9 @@ export function useStars(ids: ID[]) {
     .filter(exists) as Star[];
 }
 
-export function usePlanet(planetId: ID) {
+export function usePlanet(planetId: ID | undefined | null) {
   const scan = useScan();
-  return scan?.planets.find((p) => p.id === planetId);
+  return scan?.planets.find((p) => p.id === planetId) as Planet | null;
 }
 
 export function usePlanets(ids: ID[]) {

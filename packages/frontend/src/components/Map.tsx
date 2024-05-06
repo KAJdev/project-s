@@ -90,7 +90,7 @@ function Entities() {
 
 export function Map({ game }: { game: Game }) {
   return (
-    <div className="w-dvw z-0 h-dvh overflow-hidden bg-[#081118]">
+    <div className="w-dvw z-0 h-dvh overflow-hidden bg-black">
       <MapStage game={game} />
     </div>
   );
