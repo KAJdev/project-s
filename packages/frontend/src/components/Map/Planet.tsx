@@ -222,32 +222,21 @@ export function MapPlanet({
               onTouchEnd={onPressed}
             />
           )}
-          {/* {color && zoom > 40 && (
+          {color && zoom > 20 && (
             <>
               <Arc
                 x={planet.position.x}
                 y={planet.position.y}
-                innerRadius={starSize / 1.9}
-                outerRadius={starSize / 1.5}
+                innerRadius={starSize / 1.6}
+                outerRadius={starSize / 1.3}
                 angle={360}
                 fill={color}
                 opacity={0.75}
                 listening={false}
                 visible={!flightPlanInfo.outsideRange}
               />
-              <Arc
-                x={planet.position.x}
-                y={planet.position.y}
-                innerRadius={starSize / 100}
-                outerRadius={starSize / 2.3}
-                angle={360}
-                fill={color}
-                opacity={0.3}
-                listening={false}
-                visible={!flightPlanInfo.outsideRange}
-              />
             </>
-          )} */}
+          )}
         </>
 
         {(hovered || isSelected) && !flightPlanInfo.outsideRange && (
