@@ -166,8 +166,6 @@ function drawRandomLandmass(
         );
         break;
       case "polygon":
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
         ctx.moveTo(
           Math.random() * ctx.canvas.width,
           Math.random() * ctx.canvas.height
