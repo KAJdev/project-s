@@ -1,5 +1,6 @@
 import math
 import random
+import asyncio
 
 from modules.db import Position, distance
 from modules.utils import (
@@ -11,7 +12,7 @@ from modules.utils import (
 
 
 GALAXY_SIZE_PER_STAR = 2.5
-MAX_ITERATIONS = 100000
+MIN_STAR_DISTANCE = 10
 
 
 def generate_star_name() -> str:
@@ -40,12 +41,11 @@ def generate_carrier_name(seed: int) -> str:
     return f"{prefix} {middle}"
 
 
-def generate_star_positions(
-    player_count: int, stars_per_player: int, starting_system_size: int = 6
+def system_gen_worker(
+    player_count: int, stars_per_player: int, starting_system_size: int
 ) -> tuple[list[tuple[Position, int]], list[Position]]:
     player_stars: list[Position] = []
     star_positions: list[Position] = []
-    iteration = 0
 
     galaxy_size = GALAXY_SIZE_PER_STAR * player_count * stars_per_player
 
@@ -55,49 +55,64 @@ def generate_star_positions(
         x, y = galaxy_size / 2 * math.cos(theta), galaxy_size / 2 * math.sin(theta)
         player_stars.append(Position(x=x, y=y))
 
-    while (
-        len(star_positions) < player_count * (stars_per_player - 1)
-        and iteration < MAX_ITERATIONS
+    # generate points on a grid, only only within the galaxy, then shuffle them
+    for x in range(
+        -int(galaxy_size / 2),
+        int(galaxy_size / 2),
+        MIN_STAR_DISTANCE,
     ):
-        iteration += 1
-
-        r = math.sqrt(random.random()) * galaxy_size / 2
-        theta = random.random() * 2 * 3.14159
-
-        x, y = r * math.cos(theta), r * math.sin(theta)
-
-        # make sure its >starting_size+1 units away from a player star
-        if any(
-            distance(Position(x=x, y=y), star) < starting_system_size + 1
-            for star in player_stars
-        ):
-            continue
-
-        star_positions.append(Position(x=x, y=y))
-
-    if iteration >= MAX_ITERATIONS:
-        raise Exception("Failed to generate star positions. You're kinda boned ngl.")
+        for y in range(-int(galaxy_size / 2), int(galaxy_size / 2), MIN_STAR_DISTANCE):
+            pos = Position(
+                x=x
+                + random.random() * (MIN_STAR_DISTANCE / 1.8)
+                - MIN_STAR_DISTANCE / 2,
+                y=y
+                + random.random() * (MIN_STAR_DISTANCE / 1.8)
+                - MIN_STAR_DISTANCE / 2,
+            )
+            if (
+                distance(pos, Position(x=0, y=0)) < galaxy_size / 2
+                and any(
+                    distance(pos, star) < starting_system_size + 2
+                    for star in player_stars
+                )
+                is False
+            ):
+                star_positions.append(pos)
 
     # go through and create system sized
-    stars: list[tuple[Position, int]] = []
+    star_sizes: list[int | None] = [None] * len(star_positions)
 
     all_stars = player_stars + star_positions
 
-    # find mutual closest stars and set system size to be the distance between them/2
-    # keep in mind that for i < len(player_stars), must be a player star and size must be starting_system_size
-
-    def close_lambda(i, j):
-        d = distance(star_positions[i], all_stars[j])
-        if d < 0.001:
-            return 99999999
-        return d
-
     for i in range(len(star_positions)):
-        closest_index = min(
-            range(len(all_stars)),
-            key=lambda j: close_lambda(i, j),
-        )
+        star_dist = 9999999
+        for j, star in enumerate(all_stars):
+            if i == j - player_count:
+                continue
 
-        stars.append((star_positions[i], int(close_lambda(i, closest_index) / 2)))
+            other_star_size = (
+                (
+                    star_sizes[j - player_count]
+                    or (distance(star_positions[i], star) / 2)
+                )
+                if j >= player_count
+                else starting_system_size
+            )
+            dist = int(max(0, distance(star_positions[i], star) - other_star_size))
 
-    return stars, player_stars
+            if dist < star_dist:
+                star_dist = dist
+
+        star_sizes[i] = star_dist
+
+    return zip(star_positions, star_sizes), player_stars
+
+
+async def generate_star_positions(
+    player_count: int, stars_per_player: int, starting_system_size: int = 6
+) -> tuple[list[tuple[Position, int]], list[Position]]:
+    # this is a blocking function, so we need to run it in a thread
+    return await asyncio.to_thread(
+        system_gen_worker, player_count, stars_per_player, starting_system_size
+    )

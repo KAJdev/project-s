@@ -161,7 +161,7 @@ export function Research() {
   if (!self) return null;
 
   const playerScience =
-    scan?.stars
+    scan?.planets
       .filter((s) => s.occupier === self.id)
       .reduce((acc, s) => acc + (s.science ?? 0), 0) ?? 0;
 

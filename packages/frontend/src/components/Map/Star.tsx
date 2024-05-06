@@ -4,6 +4,7 @@ import { SelectionObject } from "@/lib/map";
 import { useScan } from "@/lib/scan";
 import { Html } from "react-konva-utils";
 import { Arc, Circle, Image } from "react-konva";
+import { lerp } from "@/lib/utils";
 
 function stickyNumberFromUUID(uuid: string, max: number) {
   let sum = 0;
@@ -125,7 +126,7 @@ function OrbitLine({
       strokeWidth={1 / zoom}
       // dash={[10 / zoom, 5 / zoom]}
       listening={false}
-      opacity={0.1}
+      opacity={0.05}
     />
   );
 }

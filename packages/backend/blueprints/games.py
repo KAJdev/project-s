@@ -29,7 +29,7 @@ bp = Blueprint("games")
 
 
 async def generate_map(game: Game):
-    normal_stars, player_stars = generate_star_positions(
+    normal_stars, player_stars = await generate_star_positions(
         player_count=game.settings.max_players,
         stars_per_player=game.settings.stars_per_player,
         starting_system_size=game.settings.starting_system_size,
