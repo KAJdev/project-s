@@ -27,6 +27,7 @@ import {
 import { Slider } from "./Theme/Slider";
 import { mapState } from "@/lib/map";
 import { useWindowSize } from "react-use";
+import { usePlanetImageURL } from "@/lib/planets";
 
 export function PlanetAspect({
   planet,
@@ -223,6 +224,7 @@ export function PlanetInspect({ planetId }: { planetId: ID }) {
   const carriers = useCarriersAround(planet?.position);
   const [buildCarrierLoading, setBuildCarrierLoading] = useState(false);
   const [buildWarpGateLoading, setBuildWarpGateLoading] = useState(false);
+  const img = usePlanetImageURL(planetId);
   if (!planet)
     return <Inspector title="unknown" nothingMessage="No planet found." />;
 
@@ -233,6 +235,7 @@ export function PlanetInspect({ planetId }: { planetId: ID }) {
       nothingMessage="No planet selected"
       draggable={false}
       dividerText="Planet Information"
+      iconURL={img}
     >
       {exists(planet.resources) && (
         <>

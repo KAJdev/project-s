@@ -16,6 +16,7 @@ import { Tooltip } from "./Theme/Tooltip";
 import { mapState } from "@/lib/map";
 import { Button } from "./Theme/Button";
 import { Select } from "./Theme/Select";
+import { usePlanetImageURL } from "@/lib/planets";
 
 function GraphPlanet({
   planet,
@@ -27,12 +28,15 @@ function GraphPlanet({
   index: number;
 }) {
   const player = useSpecificPlayer(planet.occupier);
+  const img = usePlanetImageURL(planet.id);
   return (
     <div className="flex justify-between gap-2 items-center w-full">
       <div className="flex items-center gap-2">
-        <div
-          className="w-8 h-8 rounded-full"
-          style={{ backgroundColor: player?.color ?? "#888888" }}
+        <img
+          className="w-8 h-8 rounded-full border-[3px]"
+          style={{ borderColor: player?.color ?? "#888888" }}
+          src={img}
+          alt={"planet icon"}
         />
         <p>{planet.name}</p>
       </div>

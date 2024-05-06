@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { ChevronDown, X } from "lucide-react";
 import { ReactNode } from "react";
 
@@ -13,6 +14,7 @@ export function Inspector({
   parent = false,
   dividerText,
   onClose,
+  iconURL,
 }: {
   title?: string;
   subtitle?: string;
@@ -23,6 +25,7 @@ export function Inspector({
   onClose?: () => void;
   dividerText?: string;
   parent?: boolean;
+  iconURL?: string;
 } & StyleableWithChildren) {
   const [localPosition, setLocalPosition] = useState({ x: 0, y: 0 });
   const [open, setOpen] = useState(true);
@@ -90,10 +93,21 @@ export function Inspector({
             </div>
           )}
           {title && (
-            <div className={classes("w-full p-4 border-b border-white/20")}>
-              {superTitle && <p className="text-xs opacity-50">{superTitle}</p>}
-              <h2 className="text-xl font-bold">{title}</h2>
-              {subtitle && <p className="text-sm opacity-50">{subtitle}</p>}
+            <div
+              className={classes(
+                "w-full p-4 border-b border-white/20 flex justify-between items-center gap-2"
+              )}
+            >
+              <div>
+                {superTitle && (
+                  <p className="text-xs opacity-50">{superTitle}</p>
+                )}
+                <h2 className="text-xl font-bold">{title}</h2>
+                {subtitle && <p className="text-sm opacity-50">{subtitle}</p>}
+              </div>
+              {iconURL && (
+                <img src={iconURL} className="w-10 h-10 shrink-0" alt="icon" />
+              )}
             </div>
           )}
           {(children || nothingMessage) && (

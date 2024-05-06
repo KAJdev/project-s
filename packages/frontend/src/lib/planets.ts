@@ -240,10 +240,10 @@ function drawIronPlanet(ctx: OffscreenCanvasRenderingContext2D, seed: number) {
   drawAtmosphere(ctx, "#404040");
 }
 
-export function usePlanetImage(
+export function usePlanetImageURL(
   planetId: ID | undefined
-): HTMLImageElement | null {
-  const [image, setImage] = useState<HTMLImageElement | null>(null);
+): string | undefined {
+  const [image, setImage] = useState<string | null>(null);
   const planet = usePlanet(planetId);
 
   useEffect(() => {
@@ -251,12 +251,24 @@ export function usePlanetImage(
     generatePlanetImage(
       stickyNumberFromUUID(planet.id, 1000),
       planet.distance
-    ).then((url) => {
-      const img = new Image();
-      img.src = url;
-      img.onload = () => setImage(img);
-    });
+    ).then(setImage);
   }, [planet?.id, planet?.distance, planet]);
+
+  return image;
+}
+
+export function usePlanetImage(
+  planetId: ID | undefined
+): HTMLImageElement | null {
+  const [image, setImage] = useState<HTMLImageElement | null>(null);
+  const planet = usePlanetImageURL(planetId);
+
+  useEffect(() => {
+    if (!planet) return;
+    const img = new Image();
+    img.src = planet;
+    img.onload = () => setImage(img);
+  }, [planet]);
 
   return image;
 }
