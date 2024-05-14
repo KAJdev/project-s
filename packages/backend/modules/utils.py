@@ -93,7 +93,7 @@ async def gpt(
                 "Content-Type": "application/json",
             },
             json={
-                "model": "gpt-4",
+                "model": "gpt-4o",
                 "messages": [
                     {"role": "system", "content": sys_prompt},
                     *[{"role": m[0], "content": m[1]} for m in msgs],
